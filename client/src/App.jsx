@@ -9,8 +9,8 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route path="/HomePage" element={<HomePage />} />
-        <Route path="/Auth" element={<Auth />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/auth" element={<Auth />} />
       </Routes>
     </BrowserRouter>
   );

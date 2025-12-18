@@ -12,10 +12,8 @@ import {
   Languages,
   DollarSign,
 } from "lucide-react";
-import HomePage from "../HomePage";
 
 const Auth = () => {
-  const [currentPage, setCurrentPage] = useState("home");
   const [isLogin, setIsLogin] = useState(true);
   const [accountType, setAccountType] = useState("patient"); // patient or doctor
 

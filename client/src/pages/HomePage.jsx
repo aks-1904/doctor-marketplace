@@ -1,8 +1,9 @@
-import React,{useState} from "react";
+import React, { useState } from "react";
 import { Stethoscope, Shield, Calendar, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
-  const [currentPage, setCurrentPage] = useState("home");
+  const navigate = useNavigate();
   return (
     <div>
       <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-green-50 flex flex-col">
@@ -17,12 +18,12 @@ const HomePage = () => {
                 MediLink
               </span>
             </div>
-          {/*   <button
-              onClick={() => setCurrentPage("auth")}
+            <button
+              onClick={() => navigate("/auth")}
               className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
             >
               Login / Register
-            </button> */}
+            </button>
           </div>
         </header>
 
@@ -115,7 +116,7 @@ const HomePage = () => {
           </div>
         </main>
       </div>
-     );
+      );
     </div>
   );
 };
