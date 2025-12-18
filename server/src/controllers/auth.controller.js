@@ -2,6 +2,8 @@ import User from "../models/User.model.js";
 import bcrypt from "bcrypt";
 import Patient from "../models/Patient.model.js";
 import Doctor from "../models/Doctor.model.js";
+import jwt from "jsonwebtoken";
+import Admin from "../models/admin.model.js";
 
 export const register = async (req, res) => {
   try {
@@ -129,5 +131,81 @@ export const register = async (req, res) => {
       success: false,
     });
     return;
+  }
+};
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      res.status(400).json({
+        message: "Email and password is required",
+        success: false,
+      });
+      return;
+    }
+
+    // Find User
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(401).json({
+        message: "Invalid credentials",
+        success: false,
+      });
+      return;
+    }
+
+    // Password Check
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      res.status(401).json({
+        message: "Invalid credentials",
+        success: false,
+      });
+      return;
+    }
+
+    // Load profile
+    let profile = null;
+    if (user.role === "patient") {
+      profile = await Patient.findOne({ userId: user._id });
+    } else if (user.role === "doctor") {
+      profile = await Doctor.findOne({ userId: user._id });
+
+      // Block unverified doctors
+      if (profile.verification.status !== "approved") {
+        res.status(403).json({
+          message: "Doctor account is not verified yet",
+        });
+        return;
+      }
+    } else if (user.role === "admin") {
+      profile = await Admin.findOne({ userId: user._id });
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    // Success Response
+    res.cookie("token", `Bearer ${token}`, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    res.status(200).json({
+      message: "Login successfull",
+      user,
+      profile,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Login failed",
+      success: false,
+    });
   }
 };

@@ -4,10 +4,12 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/auth.routes.js";
+import CookieParser from "cookie-parser";
 
 const app = express();
 
 // Security headers
+app.use(CookieParser());
 app.use(helmet());
 
 // Logging (dev only)
