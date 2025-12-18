@@ -1,6 +1,6 @@
-import Doctor from "../models/Doctor.model";
+import Doctor from "../models/Doctor.model.js";
 
-export const verifyDoctor = async (req, res) => {
+export const updateVerificationStatusDoctor = async (req, res) => {
   try {
     const { doctorId, updatedVerificationStatus } = req.body;
 

@@ -29,7 +29,7 @@ export const register = async (req, res) => {
     const licenseFile = req.file;
 
     // Validating role
-    if (!["patient", "doctor".includes(role)]) {
+    if (!["patient", "doctor"].includes(role)) {
       res.status(403).json({
         message: "Invalid role",
         success: false,
@@ -112,8 +112,6 @@ export const register = async (req, res) => {
         languages,
       });
     }
-
-    console.log(profile);
 
     // Success Response
     res.status(201).json({
