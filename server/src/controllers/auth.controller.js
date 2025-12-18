@@ -176,6 +176,7 @@ export const login = async (req, res) => {
       if (profile.verification.status !== "approved") {
         res.status(403).json({
           message: "Doctor account is not verified yet",
+          success: false,
         });
         return;
       }
@@ -190,21 +191,41 @@ export const login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
+    // Getting user without passwordHash
+    const userObj = user.toObject();
+    const { passwordHash: _, ...userWithoutPass } = userObj;
+
     // Success Response
-    res.cookie("token", `Bearer ${token}`, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production" ? true : false, // Only true for production,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     res.status(200).json({
       message: "Login successfull",
-      user,
+      user: userWithoutPass,
       profile,
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({
       message: "Login failed",
+      success: false,
+    });
+  }
+};
+
+export const logout = async (_, res) => {
+  try {
+    res.clearCookie("token");
+    res.status(200).json({
+      message: "Logged out successfully",
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Logout failed",
       success: false,
     });
   }
