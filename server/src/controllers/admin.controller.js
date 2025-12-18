@@ -1,4 +1,5 @@
 import Doctor from "../models/Doctor.model.js";
+import User from "../models/User.model.js";
 
 export const updateVerificationStatusDoctor = async (req, res) => {
   try {
@@ -20,7 +21,7 @@ export const updateVerificationStatusDoctor = async (req, res) => {
       return;
     }
 
-    const doctor = await Doctor.find({ userId: doctorId });
+    const doctor = await Doctor.findOne({ userId: doctorId });
 
     // Checking doctor account exists
     if (!doctor) {
@@ -41,6 +42,78 @@ export const updateVerificationStatusDoctor = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Unable to update doctor verification status",
+      success: false,
+    });
+  }
+};
+
+export const blockUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      res.status(400).json({
+        message: "User Id not found",
+        success: false,
+      });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    // Checking for user existense
+    if (!user) {
+      res.status(400).json({
+        message: "User not found",
+        success: false,
+      });
+      return;
+    }
+    // Blocking user
+    user.isBlocked = true;
+    await user.save();
+
+    res.status(200).json({
+      message: "Blocked user",
+      success: false,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unable to block the user",
+      success: false,
+    });
+  }
+};
+
+export const unblockUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      res.status(400).json({
+        message: "User Id not found",
+        success: false,
+      });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    // Checking for user existense
+    if (!user) {
+      res.status(400).json({
+        message: "User not found",
+        success: false,
+      });
+      return;
+    }
+    // Blocking user
+    user.isBlocked = false;
+    await user.save();
+
+    res.status(200).json({
+      message: "Unblocked user",
+      success: false,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unable to unblock the user",
       success: false,
     });
   }

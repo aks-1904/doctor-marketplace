@@ -1,8 +1,14 @@
 import express from "express";
-import { updateVerificationStatusDoctor } from "../controllers/admin.controller.js";
+import {
+  blockUser,
+  unblockUser,
+  updateVerificationStatusDoctor,
+} from "../controllers/admin.controller.js";
 
 const router = express.Router();
 
 router.post("/update-verification-status", updateVerificationStatusDoctor);
+router.post("/block", blockUser);
+router.post("/unblock", unblockUser);
 
 export default router;
