@@ -153,6 +153,15 @@ export const login = async (req, res) => {
       return;
     }
 
+    // Checking if user id blocked or not
+    if (user.isBlocked) {
+      res.status(403).json({
+        message: "You cannot access your account",
+        success: false,
+      });
+      return;
+    }
+
     // Password Check
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
