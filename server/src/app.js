@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
 
@@ -44,6 +45,9 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Api's
+app.use("/api/v1/auth", authRoutes);
 
 app.use((err, _, res, next) => {
   console.error(err.stack);

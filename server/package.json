@@ -20,11 +20,13 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.0.1",
+    "multer": "^2.0.2",
     "socket.io": "^4.8.1",
     "stripe": "^20.1.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "morgan": "^1.10.1",
     "nodemon": "^3.1.11"
   }
