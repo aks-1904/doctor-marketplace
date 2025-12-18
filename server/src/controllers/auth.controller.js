@@ -113,8 +113,6 @@ export const register = async (req, res) => {
       });
     }
 
-    console.log(profile);
-
     // Success Response
     res.status(201).json({
       message: "Registration successfull",
@@ -150,6 +148,15 @@ export const login = async (req, res) => {
     if (!user) {
       res.status(401).json({
         message: "Invalid credentials",
+        success: false,
+      });
+      return;
+    }
+
+    // Checking if user id blocked or not
+    if (user.isBlocked) {
+      res.status(403).json({
+        message: "You cannot access your account",
         success: false,
       });
       return;
