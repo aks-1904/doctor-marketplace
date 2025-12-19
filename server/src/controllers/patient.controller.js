@@ -1,4 +1,6 @@
+import Patient from "../models/Patient.model.js";
 import Doctor from "../models/Doctor.model.js";
+import Appointment from "../models/Appointment.model.js";
 
 export const getDoctors = async (req, res) => {
   try {
@@ -73,6 +75,111 @@ export const getDoctors = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch the doctors",
+      success: false,
+    });
+  }
+};
+
+export const bookAppointment = async (req, res) => {
+  try {
+    const { doctorId, patientId, slotDate, slotTime } = req.body;
+
+    // Fetch patient and doctor details
+    const doctor = await Doctor.findById(doctorId).populate("userId");
+    const patient = await Patient.findById(patientId).populate("userId");
+
+    if (!doctor) {
+      res.status(404).json({
+        success: false,
+        message: "Doctor not found",
+      });
+      return;
+    }
+    if (!patient) {
+      res.status(404).json({
+        success: false,
+        message: "Patient not found",
+      });
+      return;
+    }
+
+    // Availability Logic
+
+    // Determine the day of week
+    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dateObj = new Date(slotDate);
+    const dayName = daysOfWeek[dateObj.getDay()];
+
+    // Check if doctor is available on this day
+    const dayAvailability = doctor.availability.find(
+      (item) => item.day === dayName
+    );
+    if (!dayAvailability) {
+      res.status(400).json({
+        success: false,
+        message: `Doctor is not available on ${dayName}`,
+      });
+      return;
+    }
+
+    // Checking if the given time slot is within working hours
+    const timeToMinutes = (time) => {
+      const [h, m] = time.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const reqMinutes = timeToMinutes(slotTime);
+    const startMinutes = timeToMinutes(dayAvailability.from);
+    const endMinutes = timeToMinutes(dayAvailability.to);
+
+    if (reqMinutes < startMinutes || reqMinutes >= endMinutes) {
+      res.status(400).json({
+        success: false,
+        message: `Selected time is outside doctor's working hours (${dayAvailability.from} - ${dayAvailability.to})`,
+      });
+    }
+
+    // Collision detection logic
+
+    // Check if an appointment is already exists for this Doctor + Date + Time
+    const existingAppointment = await Appointment.findOne({
+      doctorId,
+      slotDate,
+      slotTime,
+    });
+    if (existingAppointment) {
+      res.status(400).json({
+        success: false,
+        message: "This slot is already booked, Please choose another time",
+      });
+      return;
+    }
+
+    // Create appointment
+    const newAppointment = await Appointment.create({
+      doctorId,
+      slotDate,
+      slotTime,
+      patientId,
+      doctorInfo: {
+        name: doctor.userId.name,
+        specialization: doctor.specialization,
+      },
+      patientInfo: {
+        name: patient.userId.name,
+      },
+      amount: doctor.consultationFee,
+      status: "pending", // Update by doctor
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Appointment Booked Successfully",
+      appointment: newAppointment,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unable to book your appointment",
       success: false,
     });
   }

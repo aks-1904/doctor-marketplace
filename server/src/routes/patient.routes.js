@@ -1,8 +1,12 @@
 import express from "express";
-import { getDoctors } from "../controllers/patient.controller.js";
+import {
+  bookAppointment,
+  getDoctors,
+} from "../controllers/patient.controller.js";
 
 const router = express.Router();
 
 router.get("/", getDoctors);
+router.post("/book", bookAppointment);
 
 export default router;
