@@ -8,6 +8,7 @@ import CookieParser from "cookie-parser";
 import { authorizeRoles } from "./middlewares/auth.middleware.js";
 import adminRoutes from "./routes/admin.routes.js";
 import patientRoutes from "./routes/patient.routes.js";
+import doctorRoutes from "./routes/doctor.routes.js";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.get("/health", (req, res) => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", authorizeRoles("admin"), adminRoutes);
 app.use("/api/v1/patient", authorizeRoles("admin", "patient"), patientRoutes);
+app.use("/api/v1/doctor", authorizeRoles("admin", "doctor"), doctorRoutes);
 
 app.use((err, _, res, next) => {
   console.error(err.stack);
