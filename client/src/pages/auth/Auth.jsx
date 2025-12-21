@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   User,
   Stethoscope,
+  Shield,
   Calendar,
   Clock,
   Phone,
@@ -25,6 +26,7 @@ const Auth = () => {
     password: "",
     age: "",
     gender: "",
+    type:[],
     specialization: [],
     qualifications: [],
     experienceYears: "",
@@ -36,15 +38,26 @@ const Auth = () => {
     timeSlots: [{ from: "", to: "" }],
   });
 
+  const type=[
+    "Ayurveda",
+    "Allopathy",
+  ];
   const specializations = [
     "Cardiology",
+    "Oncology",
     "Dermatology",
     "Neurology",
     "Pediatrics",
     "Orthopedics",
-    "General Medicine",
-    "Ayurveda",
-    "Homeopathy",
+    "Gynecology",
+    "Gastroentrology",
+    "Endocrinology",
+    "Hematology",
+    "Opthalomology",
+    "ENT",
+    "Urology",
+    "Radiology",
+    "Pathology", 
   ];
   const languageOptions = [
     "Hindi",
@@ -370,6 +383,31 @@ const Auth = () => {
                               }
                               className={`px-3 py-2 rounded-lg text-sm transition-all ${
                                 formData.specialization.includes(spec)
+                                  ? "bg-blue-500 text-white shadow-md"
+                                  : "bg-white/50 text-gray-700 hover:bg-white border border-gray-200"
+                              }`}
+                            >
+                              {spec}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          <Shield className="w-4 h-4 inline mr-2" />
+                          Type
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {type.map((spec) => (
+                            <button
+                              key={spec}
+                              type="button"
+                              onClick={() =>
+                                toggleSelection("type", spec)
+                              }
+                              className={`px-3 py-2 rounded-lg text-sm transition-all ${
+                                formData.type.includes(spec)
                                   ? "bg-blue-500 text-white shadow-md"
                                   : "bg-white/50 text-gray-700 hover:bg-white border border-gray-200"
                               }`}
