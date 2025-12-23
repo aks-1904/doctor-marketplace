@@ -150,6 +150,32 @@ const Auth = () => {
         (item) => fd.append("type[]", item) // allopathic / ayurvedic
       );
 
+      // Availability
+      if (
+        formData.availabilityDays.length === 0 ||
+        formData.timeSlots.length === 0
+      ) {
+        alert("Please select availability days and time slots");
+        return;
+      }
+
+      let availabilityIdx = 0;
+      formData.availabilityDays.forEach((day) => {
+        formData.timeSlots.forEach((slot) => {
+          if (!slot.from || !slot.to) return;
+          if (slot.from >= slot.to) {
+            alert("Invalid time slot");
+            return;
+          }
+
+          fd.append(`availability[${availabilityIdx}][day]`, day);
+          fd.append(`availability[${availabilityIdx}][from]`, slot.from);
+          fd.append(`availability[${availabilityIdx}][to]`, slot.to);
+
+          availabilityIdx++;
+        });
+      });
+
       if (!licenseFile) {
         alert("Medical license PDF is required");
         return;
