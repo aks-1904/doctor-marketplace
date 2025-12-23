@@ -50,7 +50,6 @@ const Auth = () => {
     "Pediatrics",
     "Orthopedics",
     "Gynecology",
-    "Dermmatology",
     "Gastroentrology",
     "Endocrinology",
     "Hematology",
