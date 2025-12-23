@@ -3,7 +3,7 @@ import User from "../models/User.model.js";
 
 export const updateVerificationStatusDoctor = async (req, res) => {
   try {
-    const { doctorId, updatedVerificationStatus } = req.body;
+    const { doctorId, updatedVerificationStatus, rejectedReason } = req.body;
 
     // Basic validation
     if (!["approved", "rejected"].includes(updatedVerificationStatus)) {
@@ -32,6 +32,18 @@ export const updateVerificationStatusDoctor = async (req, res) => {
       return;
     }
 
+    // If doctor verification is rejected
+    if (updatedVerificationStatus === "rejected") {
+      // Checking for rejected reason
+      if (!rejectedReason) {
+        res.status(400).json({
+          success: false,
+          message: "Rejected reason required",
+        });
+        return;
+      }
+      doctor.verification.rejectedReason = rejectedReason;
+    }
     doctor.verification.status = updatedVerificationStatus;
     await doctor.save();
 
@@ -115,6 +127,28 @@ export const unblockUser = async (req, res) => {
     res.status(500).json({
       message: "Unable to unblock the user",
       success: false,
+    });
+  }
+};
+
+export const getAllUnverifiedDoctor = async (req, res) => {
+  try {
+    // Get all doctors whose verification is pending
+    const doctors = await Doctor.find({
+      "verification.status": "pending",
+    })
+      .populate("userId")
+      .select("-userId.passwordHash");
+
+    // Success response
+    res.status(200).json({
+      success: true,
+      doctors,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Cannot get unverified doctors",
     });
   }
 };
