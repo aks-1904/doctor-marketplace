@@ -207,8 +207,16 @@ export const login = async (req, res) => {
     } else if (user.role === "doctor") {
       profile = await Doctor.findOne({ userId: user._id });
 
+      // Send message to rejected doctors
+      if (profile.verification.status === "rejected") {
+        res.status(401).json({
+          success: false,
+          message: `Your profile has been rejected because of ${profile.verification.rejectedReason}`,
+        });
+        return;
+      }
       // Block unverified doctors
-      if (profile.verification.status !== "approved") {
+      else if (profile.verification.status !== "approved") {
         res.status(403).json({
           message: "Doctor account is not verified yet",
           success: false,
@@ -232,10 +240,10 @@ export const login = async (req, res) => {
 
     // Success Response
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production" ? true : false, // Only true for production,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      httpOnly: false,
+      secure: false, // MUST be false on http
+      sameSite: "lax", // MUST NOT be "none"
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({
       message: "Login successfull",
