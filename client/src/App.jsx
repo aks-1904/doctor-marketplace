@@ -3,6 +3,7 @@ import HomePage from "./pages/HomePage";
 import Auth from "./pages/auth/Auth";
 import Lobby from "./screens/Lobby";
 import { SocketProvider } from "./context/SocketProvider";
+import Room from "./screens/Room";
 
 const App = () => {
   
@@ -15,6 +16,7 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<Auth />} />
        <Route path="/lobby" element={<Lobby />} />
+       <Route path="/room/:roomId" element={<Room />} />
 
       </Routes>
       </SocketProvider>
