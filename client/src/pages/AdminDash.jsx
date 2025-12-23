@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Shield,
   UserCheck,
@@ -8,10 +8,18 @@ import {
   Mail,
 } from "lucide-react";
 import useAuth from "../hooks/useAuth";
+import useAdmin from "../hooks/useAdmin";
+import { useSelector } from "react-redux";
 
 const AdminDash = () => {
   const [activeTab, setActiveTab] = useState("doctors");
   const { logout } = useAuth();
+  const { getAllUnverifiedDoctors } = useAdmin();
+  const { unverifiedDoctors } = useSelector((store) => store.admin);
+
+  useEffect(() => {
+    getAllUnverifiedDoctors();
+  });
 
   const doctors = [
     {
@@ -133,13 +141,12 @@ const AdminDash = () => {
 
           {activeTab === "doctors" && (
             <div className="space-y-6">
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">
-                  Pending Approvals
-                </h3>
-                {doctors
-                  .filter((d) => d.status === "pending")
-                  .map((doctor) => (
+              {unverifiedDoctors.length !== 0 && (
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">
+                    Pending Approvals
+                  </h3>
+                  {unverifiedDoctors.map((doctor) => (
                     <div
                       key={doctor.id}
                       className="border border-gray-200 rounded-lg p-4 mb-4"
@@ -172,7 +179,8 @@ const AdminDash = () => {
                       </div>
                     </div>
                   ))}
-              </div>
+                </div>
+              )}
 
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">

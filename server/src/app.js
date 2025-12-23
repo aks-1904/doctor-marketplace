@@ -5,16 +5,26 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/auth.routes.js";
 import CookieParser from "cookie-parser";
-import { authorizeRoles } from "./middlewares/auth.middleware.js";
+import {
+  authenticateUser,
+  authorizeRoles,
+} from "./middlewares/auth.middleware.js";
 import adminRoutes from "./routes/admin.routes.js";
 import patientRoutes from "./routes/patient.routes.js";
 import doctorRoutes from "./routes/doctor.routes.js";
+import dotenv from "dotenv";
 
 const app = express();
 
 // Security headers
 app.use(CookieParser());
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+
+dotenv.config();
 
 // Logging (dev only)
 if (process.env.NODE_ENV !== "production") {
@@ -24,7 +34,7 @@ if (process.env.NODE_ENV !== "production") {
 // CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*",
+    origin: process.env.CLIENT_URL,
     credentials: true,
   })
 );
@@ -54,9 +64,24 @@ app.get("/health", (req, res) => {
 
 // Api's
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/admin", authorizeRoles("admin"), adminRoutes);
-app.use("/api/v1/patient", authorizeRoles("admin", "patient"), patientRoutes);
-app.use("/api/v1/doctor", authorizeRoles("admin", "doctor"), doctorRoutes);
+app.use(
+  "/api/v1/admin",
+  authenticateUser,
+  authorizeRoles("admin"),
+  adminRoutes
+);
+app.use(
+  "/api/v1/patient",
+  authenticateUser,
+  authorizeRoles("admin", "patient"),
+  patientRoutes
+);
+app.use(
+  "/api/v1/doctor",
+  authenticateUser,
+  authorizeRoles("admin", "doctor"),
+  doctorRoutes
+);
 
 app.use((err, _, res, next) => {
   console.error(err.stack);
