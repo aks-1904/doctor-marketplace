@@ -6,19 +6,15 @@ import AdminDash from "./pages/AdminDash";
 import DoctorDash from "./pages/DoctorDash";
 
 const App = () => {
-  
   return (
-    
     <BrowserRouter>
       <Routes>
-        
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<Auth />} />
-         <Route path="/patient" element={<UserDash />} />
-         <Route path="/admin" element={<AdminDash />} />
-          <Route path="/doctor" element={<DoctorDash />} />
-
+        <Route path="/patient" element={<UserDash />} />
+        <Route path="/admin" element={<AdminDash />} />
+        <Route path="/doctor" element={<DoctorDash />} />
       </Routes>
     </BrowserRouter>
   );

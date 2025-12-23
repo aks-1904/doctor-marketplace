@@ -13,10 +13,13 @@ import {
   Languages,
   DollarSign,
 } from "lucide-react";
+import useAuth from "../../hooks/useAuth";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [accountType, setAccountType] = useState("patient"); // patient or doctor
+  const [licenseFile, setLicenseFile] = useState(null);
+  const { register, login } = useAuth();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -26,7 +29,7 @@ const Auth = () => {
     password: "",
     age: "",
     gender: "",
-    type:[],
+    type: [],
     specialization: [],
     qualifications: [],
     experienceYears: "",
@@ -38,10 +41,7 @@ const Auth = () => {
     timeSlots: [{ from: "", to: "" }],
   });
 
-  const type=[
-    "Ayurveda",
-    "Allopathy",
-  ];
+  const type = ["Ayurveda", "Allopathy"];
   const specializations = [
     "Cardiology",
     "Oncology",
@@ -57,7 +57,7 @@ const Auth = () => {
     "ENT",
     "Urology",
     "Radiology",
-    "Pathology", 
+    "Pathology",
   ];
   const languageOptions = [
     "Hindi",
@@ -101,12 +101,64 @@ const Auth = () => {
   };
 
   const handleSubmit = () => {
-    console.log("Form submitted:", { isLogin, accountType, formData });
-    alert(
-      `${isLogin ? "Login" : "Registration"} successful${
-        !isLogin ? ` as ${accountType}` : ""
-      }!`
-    );
+    // ================= LOGIN =================
+    if (isLogin) {
+      const loginPayload = {
+        email: formData.email,
+        password: formData.password,
+      };
+
+      // you will implement this hook later
+      login(loginPayload);
+      return;
+    }
+
+    // ================= REGISTER =================
+    const fd = new FormData();
+
+    // common
+    fd.append("name", formData.name);
+    fd.append("email", formData.email);
+    fd.append("phone", formData.phone);
+    fd.append("password", formData.password);
+    fd.append("role", accountType);
+
+    // patient
+    if (accountType === "patient") {
+      fd.append("age", formData.age);
+      fd.append("gender", formData.gender);
+    }
+
+    // doctor
+    if (accountType === "doctor") {
+      fd.append("experienceYears", formData.experienceYears);
+      fd.append("consultationFee", formData.consultationFee);
+      fd.append("licenseNumber", formData.licenseNumber);
+
+      // arrays — append individually
+      formData.specialization.forEach((item) =>
+        fd.append("specialization[]", item)
+      );
+
+      formData.qualifications.forEach((item) =>
+        fd.append("qualifications[]", item)
+      );
+
+      formData.languages.forEach((item) => fd.append("languages[]", item));
+
+      formData.type.forEach(
+        (item) => fd.append("type[]", item) // allopathic / ayurvedic
+      );
+
+      if (!licenseFile) {
+        alert("Medical license PDF is required");
+        return;
+      }
+
+      fd.append("licenseDocument", licenseFile);
+    }
+
+    register(fd);
   };
 
   return (
@@ -393,7 +445,7 @@ const Auth = () => {
                         </div>
                       </div>
 
-                       <div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                           <Shield className="w-4 h-4 inline mr-2" />
                           Type
@@ -403,9 +455,7 @@ const Auth = () => {
                             <button
                               key={spec}
                               type="button"
-                              onClick={() =>
-                                toggleSelection("type", spec)
-                              }
+                              onClick={() => toggleSelection("type", spec)}
                               className={`px-3 py-2 rounded-lg text-sm transition-all ${
                                 formData.type.includes(spec)
                                   ? "bg-blue-500 text-white shadow-md"
@@ -483,6 +533,31 @@ const Auth = () => {
                           onChange={handleInputChange}
                           placeholder="Enter your license number"
                           className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <FileText className="w-4 h-4 inline mr-2" />
+                          Upload Medical License (PDF only)
+                        </label>
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+
+                            if (file.type !== "application/pdf") {
+                              alert("Only PDF files are allowed");
+                              e.target.value = "";
+                              return;
+                            }
+
+                            setLicenseFile(file);
+                          }}
+                          className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl"
                           required
                         />
                       </div>
@@ -615,7 +690,6 @@ const Auth = () => {
           </div>
         </div>
       </div>
-     
     </div>
   );
 };
