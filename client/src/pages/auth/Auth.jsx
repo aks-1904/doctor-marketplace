@@ -12,6 +12,7 @@ import {
   Award,
   Languages,
   DollarSign,
+  Loader2,
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
@@ -19,7 +20,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [accountType, setAccountType] = useState("patient"); // patient or doctor
   const [licenseFile, setLicenseFile] = useState(null);
-  const { register, login } = useAuth();
+  const { register, login, error, loading } = useAuth();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -677,16 +678,27 @@ const Auth = () => {
                 </>
               )}
 
+              {error && (
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              )}
+
               {/* Submit Button */}
               <button
                 onClick={handleSubmit}
-                className="w-full py-4 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105 mt-6"
+                className="w-full py-4 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105"
               >
-                {isLogin
-                  ? "Login to Account"
-                  : `Register as ${
-                      accountType === "doctor" ? "Doctor" : "Patient"
-                    }`}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Please
+                    Wait...
+                  </span>
+                ) : isLogin ? (
+                  "Login to Account"
+                ) : (
+                  `Register as ${
+                    accountType === "doctor" ? "Doctor" : "Patient"
+                  }`
+                )}
               </button>
 
               {isLogin && (
