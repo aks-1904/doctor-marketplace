@@ -25,11 +25,12 @@ export const register = async (req, res) => {
       consultationFee,
       licenseNumber,
       languages,
+      availability,
     } = req.body;
     const licenseFile = req.file;
 
     // Validating role
-    if (!["patient", "doctor".includes(role)]) {
+    if (!["patient", "doctor"].includes(role)) {
       res.status(403).json({
         message: "Invalid role",
         success: false,
@@ -96,6 +97,32 @@ export const register = async (req, res) => {
         return;
       }
 
+      // Normalize availability
+      let doctorAvailability = [];
+      if (availability) {
+        const availabilityArr = Array.isArray(availability)
+          ? availability
+          : [availability];
+
+        doctorAvailability = availabilityArr.map((slot) => ({
+          day: slot.day,
+          from: slot.from,
+          to: slot.to,
+        }));
+
+        // Strick validation
+        for (const slot of doctorAvailability) {
+          if (!slot.day || !slot.from || !slot.to) {
+            await User.findByIdAndDelete(user._id);
+            res.status(400).json({
+              success: false,
+              message: "Invalid availability data",
+            });
+            return;
+          }
+        }
+      }
+
       const licenseDocumentUrl = `/uploads/licenses/${licenseFile.filename}`;
 
       profile = await Doctor.create({
@@ -104,6 +131,7 @@ export const register = async (req, res) => {
         qualifications,
         experienceYears,
         consultationFee,
+        availability: doctorAvailability,
         verification: {
           licenseNumber,
           licenseDocumentUrl,
