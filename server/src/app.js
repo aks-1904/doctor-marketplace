@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/auth.routes.js";
@@ -12,15 +11,16 @@ import {
 import adminRoutes from "./routes/admin.routes.js";
 import patientRoutes from "./routes/patient.routes.js";
 import doctorRoutes from "./routes/doctor.routes.js";
+import helmet from "helmet";
 import dotenv from "dotenv";
 
 const app = express();
 
-// Security headers
 app.use(CookieParser());
 app.use(
   helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false,
   })
 );
 
@@ -40,12 +40,14 @@ app.use(
 );
 
 // Rate limiting (basic DoS protection)
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-  })
-);
+if (process.env.NODE_ENV === "production") {
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+    })
+  );
+}
 
 // Body parsers
 app.use(express.json({ limit: "10mb" }));

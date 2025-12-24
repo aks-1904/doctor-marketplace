@@ -37,7 +37,6 @@ const Room = () => {
       // Connection is secure when connected
       if (state === "connected") {
         setIsSecureConnection(true);
-        console.log("✅ Secure P2P connection established");
       } else if (state === "failed" || state === "disconnected") {
         setIsSecureConnection(false);
       }
@@ -46,7 +45,6 @@ const Room = () => {
     const updateIceState = () => {
       const state = peer.peer.iceConnectionState;
       setIceConnectionState(state);
-      console.log("ICE State:", state);
     };
 
     peer.peer.addEventListener("connectionstatechange", updateConnectionState);
@@ -62,7 +60,6 @@ const Room = () => {
      USER JOIN - ENSURE ONLY 2 USERS
   ============================================================ */
   const handleUserJoined = useCallback(({ id }) => {
-    console.log("User joined:", id);
     
     // If already in a call, reject new connection
     if (remoteSocketId && remoteSocketId !== id) {
@@ -96,7 +93,6 @@ const Room = () => {
       const offer = await peer.getOffer();
       socket.emit("user:call", { to: remoteSocketId, offer });
       
-      console.log("📞 Call initiated");
     } catch (err) {
       console.error("Error starting call:", err);
       alert("Failed to access camera/microphone. Please check permissions.");
@@ -108,7 +104,6 @@ const Room = () => {
   ============================================================ */
   const handleIncomingCall = useCallback(
     async ({ from, offer }) => {
-      console.log("📞 Incoming call from:", from);
       
       // Reject if already in a call
       if (remoteSocketId && remoteSocketId !== from) {
@@ -140,7 +135,6 @@ const Room = () => {
         // Process any queued ICE candidates
         await peer.processPendingCandidates();
         
-        console.log("✅ Call accepted");
       } catch (err) {
         console.error("Error accepting call:", err);
         alert("Failed to access camera/microphone. Please check permissions.");
@@ -153,7 +147,6 @@ const Room = () => {
      CALL ACCEPTED
   ============================================================ */
   const handleCallAccepted = useCallback(async ({ ans }) => {
-    console.log("✅ Call accepted by remote peer");
     await peer.setRemoteAnswer(ans);
     
     // Process any queued ICE candidates
@@ -166,14 +159,12 @@ const Room = () => {
   useEffect(() => {
     const handleIceCandidate = (event) => {
       if (event.candidate && remoteSocketId) {
-        console.log("🧊 Sending ICE candidate:", event.candidate.type);
         
         socket.emit("peer:ice", {
           to: remoteSocketId,
           candidate: event.candidate,
         });
       } else if (!event.candidate) {
-        console.log("🧊 ICE gathering complete");
       }
     };
 
@@ -185,7 +176,6 @@ const Room = () => {
   }, [remoteSocketId, socket]);
 
   const handleIncomingIce = useCallback(async ({ candidate }) => {
-    console.log("🧊 Received ICE candidate:", candidate.type);
     await peer.addIceCandidate(candidate);
   }, []);
 
@@ -194,13 +184,11 @@ const Room = () => {
   ============================================================ */
   useEffect(() => {
     const handleTrack = (ev) => {
-      console.log("📺 Received remote track");
       const stream = ev.streams[0];
       
       // Verify this is from the correct peer (security check)
       if (remoteSocketId) {
         setRemoteStream(stream);
-        console.log("✅ Remote stream set securely");
       } else {
         console.warn("⚠️ Received track from unknown peer");
       }
@@ -217,7 +205,6 @@ const Room = () => {
      NEGOTIATION
   ============================================================ */
   const handleNegoNeeded = useCallback(async () => {
-    console.log("🔄 Negotiation needed");
     const offer = await peer.getOffer();
     socket.emit("peer:nego:needed", {
       offer,
@@ -233,7 +220,6 @@ const Room = () => {
         return;
       }
       
-      console.log("🔄 Incoming negotiation");
       const ans = await peer.getAnswer(offer);
       socket.emit("peer:nego:done", { to: from, ans });
     },
@@ -247,7 +233,6 @@ const Room = () => {
       return;
     }
     
-    console.log("🔄 Final negotiation");
     await peer.setRemoteAnswer(ans);
   }, [remoteSocketId]);
 
@@ -327,7 +312,6 @@ const Room = () => {
      END CALL - SECURE CLEANUP
   ============================================================ */
   const endCall = () => {
-    console.log("📴 Ending call");
     
     // Stop all local tracks
     if (myStream) {
@@ -354,7 +338,6 @@ const Room = () => {
     // Reset peer connection
     peer.resetConnection();
     
-    console.log("✅ Call ended, connection cleaned up");
   };
 
   /* ============================================================

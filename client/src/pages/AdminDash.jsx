@@ -19,7 +19,7 @@ const AdminDash = () => {
 
   useEffect(() => {
     getAllUnverifiedDoctors();
-  });
+  }, []);
 
   const doctors = [
     {
@@ -148,21 +148,21 @@ const AdminDash = () => {
                   </h3>
                   {unverifiedDoctors.map((doctor) => (
                     <div
-                      key={doctor.id}
+                      key={doctor._id}
                       className="border border-gray-200 rounded-lg p-4 mb-4"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="text-4xl">{doctor.image}</div>
+                          <div className="text-4xl">{"👩‍⚕️"}</div>
                           <div>
                             <h4 className="font-bold text-lg text-gray-800">
-                              {doctor.name}
+                              {doctor?.userId?.name}
                             </h4>
                             <p className="text-sm text-gray-600">
-                              {doctor.specialty}
+                              {doctor?.specialization[0]}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {doctor.experience} experience
+                              {doctor.experienceYears} years of experience
                             </p>
                           </div>
                         </div>

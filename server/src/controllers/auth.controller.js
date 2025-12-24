@@ -239,19 +239,13 @@ export const login = async (req, res) => {
     const { passwordHash: _, ...userWithoutPass } = userObj;
 
     // Success Response
-    res.cookie("token", token, {
-      httpOnly: false,
-      secure: false, // MUST be false on http
-      sameSite: "lax", // MUST NOT be "none"
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
     res.status(200).json({
       message: "Login successfull",
       user: userWithoutPass,
       profile,
+      token,
     });
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       message: "Login failed",
       success: false,

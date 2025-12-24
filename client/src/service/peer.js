@@ -26,7 +26,6 @@ class PeerService {
 
     // Monitor connection state for security
     this.peer.onconnectionstatechange = () => {
-      console.log("Connection state:", this.peer.connectionState);
       
       if (this.peer.connectionState === "failed") {
         console.error("Connection failed - attempting ICE restart");
@@ -36,7 +35,6 @@ class PeerService {
 
     // Monitor ICE connection state
     this.peer.oniceconnectionstatechange = () => {
-      console.log("ICE connection state:", this.peer.iceConnectionState);
       
       if (this.peer.iceConnectionState === "disconnected") {
         console.warn("ICE disconnected - connection may be unstable");
@@ -50,7 +48,6 @@ class PeerService {
 
     // Monitor ICE gathering state
     this.peer.onicegatheringstatechange = () => {
-      console.log("ICE gathering state:", this.peer.iceGatheringState);
     };
   }
 
@@ -94,7 +91,6 @@ class PeerService {
     try {
       if (this.peer.remoteDescription) {
         await this.peer.addIceCandidate(new RTCIceCandidate(candidate));
-        console.log("ICE candidate added successfully");
       } else {
         console.warn("Remote description not set, queuing ICE candidate");
         // Queue the candidate if remote description isn't set yet
@@ -110,7 +106,6 @@ class PeerService {
 
   async processPendingCandidates() {
     if (this.pendingCandidates && this.pendingCandidates.length > 0) {
-      console.log(`Processing ${this.pendingCandidates.length} pending ICE candidates`);
       for (const candidate of this.pendingCandidates) {
         await this.addIceCandidate(candidate);
       }
@@ -120,7 +115,6 @@ class PeerService {
 
   async restartIce() {
     try {
-      console.log("Restarting ICE...");
       const offer = await this.peer.createOffer({ iceRestart: true });
       await this.peer.setLocalDescription(offer);
       return offer;
@@ -194,7 +188,6 @@ class PeerService {
 
       // Close the connection
       this.peer.close();
-      console.log("Peer connection closed");
     }
 
     // Clear pending candidates

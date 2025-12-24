@@ -1,15 +1,16 @@
 import express from "express";
 import { Server } from "socket.io";
 
-const io = new Server(8000, {
-  cors: true,
+const SOCKET_PORT = process.env.SOCKET_PORT;
+
+const io = new Server(SOCKET_PORT, {
+  cors: process.env.CLIENT_URL,
 });
 
 const emailToSocketIdMap = new Map();
 const socketIdToEmailMap = new Map();
 
 io.on("connection", (socket) => {
-  console.log(`socket connected`, socket.id);
 
   socket.on("room:join", (data) => {
     const { email, room } = data;
@@ -59,8 +60,7 @@ io.on("connection", (socket) => {
     });
   });
 
-socket.on("call:busy", ({ to }) => {
-  io.to(to).emit("call:busy");
-});
-
+  socket.on("call:busy", ({ to }) => {
+    io.to(to).emit("call:busy");
+  });
 });

@@ -46,6 +46,7 @@ const useAuth = () => {
         },
       });
 
+      localStorage.setItem("token", res.data?.token);
       dispatch(loginSuccess(res.data)); // Setting the user to storage using react-redux
       navigate(`/${res.data?.user?.role}`); // Navigate user to there respective dashboard if success
       toast.success(`${res.data?.message}`);
