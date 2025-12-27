@@ -10,8 +10,8 @@ import DoctorDash from "./pages/DoctorDash";
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <SocketProvider>
+    <SocketProvider>
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/auth" element={<Auth />} />
@@ -20,9 +20,9 @@ const App = () => {
           <Route path="/patient" element={<UserDash />} />
           <Route path="/admin" element={<AdminDash />} />
           <Route path="/doctor" element={<DoctorDash />} />
-       </Routes>
-      </SocketProvider>
-   </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </SocketProvider>
   );
 };
 
