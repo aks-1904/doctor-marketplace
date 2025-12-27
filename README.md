@@ -58,7 +58,8 @@ git clone https://github.com/aks-1904/doctor-marketplace.git
 cd server
 npm install
 # Configure .env (see server/README.md)
-npm start
+npm run dev # Start a development server
+npm start # Start production ready server
 ```
 
 

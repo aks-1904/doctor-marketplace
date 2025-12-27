@@ -64,12 +64,14 @@ This is the frontend client for the Doctor Marketplace application. It is a mode
 Create a `.env` file in the root directory. You must configure the backend API URL and the Socket Server URL.
 
 ```env
+# Environment Setting
+NODE_ENV=development
+
 # URL for the REST API (Express Server)
-VITE_BACKEND_URL=http://localhost:5000
+VITE_BACKEND_URL=http://192.168.1.X:8080
 
 # URL for the Socket.IO Server (Signaling Server)
-# Note: Ensure this matches the port defined in your socket server
-BACKEND_SOCKET_URL=http://localhost:8000
+BACKEND_SOCKET_URL=http://192.168.1.X:8080
 
 ```
 

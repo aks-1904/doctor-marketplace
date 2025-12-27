@@ -67,12 +67,8 @@ MONGO_URI=mongodb://localhost:27017/doctor-marketplace
 JWT_SECRET=your_super_secret_key
 JWT_EXPIRES_IN=7d
 
-# Client Configuration (CORS)
-CLIENT_URL=http://localhost:3000
-
-# Socket.IO Configuration
-SOCKET_PORT=8000
-
+# Client Configuration (Check for X) (CORS)
+CLIENT_URL=http://192.168.1.X:5173
 ```
 
 ## 📥 Installation & Setup
@@ -99,32 +95,11 @@ mkdir -p uploads/licenses
 
 
 4. **Run the Servers**
-This project requires two processes running simultaneously: the API server and the Socket server.
-**Option A: Run separately in two terminals**
-*Terminal 1 (REST API):*
 ```bash
-node src/server.js
+npm run start
 ```
 
-
-*Terminal 2 (Socket Server):*
-```bash
-node index.js
-```
-
-
-**Option B: using Concurrently (recommended dev setup)**
-*Add this to your package.json scripts:*
-```json
-"scripts": {
-  "start": "node src/server.js",
-  "socket": "node index.js",
-  "dev": "concurrently \"nodemon src/server.js\" \"nodemon index.js\""
-}
-```
-
-
-*Then run:*
+*To run development server*
 ```bash
 npm run dev
 ```
