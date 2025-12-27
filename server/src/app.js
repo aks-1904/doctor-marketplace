@@ -1,22 +1,29 @@
 import express from "express";
+import http from "http";
 import cors from "cors";
+import helmet from "helmet";
 import morgan from "morgan";
-import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
+import { Server } from "socket.io";
+
 import authRoutes from "./routes/auth.routes.js";
-import CookieParser from "cookie-parser";
+import adminRoutes from "./routes/admin.routes.js";
+import patientRoutes from "./routes/patient.routes.js";
+import doctorRoutes from "./routes/doctor.routes.js";
 import {
   authenticateUser,
   authorizeRoles,
 } from "./middlewares/auth.middleware.js";
-import adminRoutes from "./routes/admin.routes.js";
-import patientRoutes from "./routes/patient.routes.js";
-import doctorRoutes from "./routes/doctor.routes.js";
-import helmet from "helmet";
-import dotenv from "dotenv";
 
 const app = express();
 
-app.use(CookieParser());
+/* =======================
+   Middlewares
+======================= */
+app.use(cookieParser());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
+
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
@@ -24,47 +31,24 @@ app.use(
   })
 );
 
-dotenv.config();
-
-// Logging (dev only)
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
-// CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: true,
     credentials: true,
   })
 );
 
-// Rate limiting (basic DoS protection)
-if (process.env.NODE_ENV === "production") {
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 100,
-    })
-  );
-}
-
-// Body parsers
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
-
 /* =======================
-   Health Check
+   Routes
 ======================= */
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "OK",
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-  });
-});
+app.get("/health", (_, res) =>
+  res.json({ status: "OK", uptime: process.uptime() })
+);
 
-// Api's
 app.use("/api/v1/auth", authRoutes);
 app.use(
   "/api/v1/admin",
@@ -85,13 +69,69 @@ app.use(
   doctorRoutes
 );
 
-app.use((err, _, res, next) => {
-  console.error(err.stack);
+/* =======================
+   HTTP + SOCKET
+======================= */
+const httpServer = http.createServer(app);
 
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Internal Server Error",
+const io = new Server(httpServer, {
+  cors: {
+    origin: ["http://localhost:5173", process.env.CLIENT_URL],
+    methods: ["GET", "POST"],
+  },
+});
+
+/* =======================
+   Socket Logic
+======================= */
+const emailToSocketIdMap = new Map();
+const socketIdToEmailMap = new Map();
+
+io.on("connection", (socket) => {
+  console.log("🔌 Socket connected:", socket.id);
+
+  socket.on("room:join", ({ email, room }) => {
+    console.log("h");
+    emailToSocketIdMap.set(email, socket.id);
+    socketIdToEmailMap.set(socket.id, email);
+
+    socket.join(room);
+
+    io.to(room).emit("user:joined", { email, id: socket.id });
+    socket.emit("room:joined", { email, room });
+  });
+
+  socket.on("user:call", ({ to, offer }) =>
+    io.to(to).emit("incoming:call", { from: socket.id, offer })
+  );
+
+  socket.on("call:accepted", ({ to, ans }) =>
+    io.to(to).emit("call:accepted", { from: socket.id, ans })
+  );
+
+  socket.on("peer:nego:needed", ({ to, offer }) =>
+    io.to(to).emit("peer:nego:needed", { from: socket.id, offer })
+  );
+
+  socket.on("peer:nego:done", ({ to, ans }) =>
+    io.to(to).emit("peer:nego:final", { from: socket.id, ans })
+  );
+
+  socket.on("peer:ice", ({ to, candidate }) =>
+    io.to(to).emit("peer:ice", { from: socket.id, candidate })
+  );
+
+  socket.on("call:busy", ({ to }) => io.to(to).emit("call:busy"));
+
+  socket.on("disconnect", (reason) => {
+    console.log("Disconnected:", socket.id, reason);
+
+    const email = socketIdToEmailMap.get(socket.id);
+    if (email) {
+      socketIdToEmailMap.delete(socket.id);
+      emailToSocketIdMap.delete(email);
+    }
   });
 });
 
-export default app;
+export { app, httpServer };
