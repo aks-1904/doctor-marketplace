@@ -3,6 +3,8 @@
 class PeerService {
   constructor() {
     this.peer = null;
+    this.isNegotiating = false;
+    this.makingOffer = false;
     this.initializePeer();
   }
 
@@ -19,13 +21,14 @@ class PeerService {
       ],
       // Security and connection configuration
       iceCandidatePoolSize: 10,
-      iceTransportPolicy: "all", // Use both STUN and TURN if available
-      bundlePolicy: "max-bundle", // Bundle all media on single connection
-      rtcpMuxPolicy: "require", // Multiplex RTP and RTCP
+      iceTransportPolicy: "all",
+      bundlePolicy: "max-bundle",
+      rtcpMuxPolicy: "require",
     });
 
     // Monitor connection state for security
     this.peer.onconnectionstatechange = () => {
+      console.log("Connection state:", this.peer.connectionState);
       
       if (this.peer.connectionState === "failed") {
         console.error("Connection failed - attempting ICE restart");
@@ -35,6 +38,7 @@ class PeerService {
 
     // Monitor ICE connection state
     this.peer.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", this.peer.iceConnectionState);
       
       if (this.peer.iceConnectionState === "disconnected") {
         console.warn("ICE disconnected - connection may be unstable");
@@ -48,20 +52,40 @@ class PeerService {
 
     // Monitor ICE gathering state
     this.peer.onicegatheringstatechange = () => {
+      console.log("ICE gathering state:", this.peer.iceGatheringState);
+    };
+
+    // Reset negotiation flags on stable state
+    this.peer.onsignalingstatechange = () => {
+      if (this.peer.signalingState === "stable") {
+        this.isNegotiating = false;
+        this.makingOffer = false;
+      }
     };
   }
 
   async getOffer() {
     try {
+      // Prevent making multiple offers simultaneously
+      if (this.makingOffer) {
+        console.log("Already making an offer, skipping...");
+        return null;
+      }
+
+      this.makingOffer = true;
+      
       const offer = await this.peer.createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true,
-        iceRestart: false,
       });
+      
       await this.peer.setLocalDescription(offer);
+      this.makingOffer = false;
+      
       return offer;
     } catch (error) {
       console.error("Error creating offer:", error);
+      this.makingOffer = false;
       throw error;
     }
   }
@@ -80,7 +104,11 @@ class PeerService {
 
   async setRemoteAnswer(answer) {
     try {
-      await this.peer.setRemoteDescription(new RTCSessionDescription(answer));
+      if (this.peer.signalingState === "have-local-offer") {
+        await this.peer.setRemoteDescription(new RTCSessionDescription(answer));
+      } else {
+        console.warn("Not in correct state to set remote answer:", this.peer.signalingState);
+      }
     } catch (error) {
       console.error("Error setting remote answer:", error);
       throw error;
@@ -91,21 +119,23 @@ class PeerService {
     try {
       if (this.peer.remoteDescription) {
         await this.peer.addIceCandidate(new RTCIceCandidate(candidate));
+        console.log("✅ ICE candidate added");
       } else {
-        console.warn("Remote description not set, queuing ICE candidate");
-        // Queue the candidate if remote description isn't set yet
+        // This is normal - ICE candidates can arrive before remote description
+        console.log("⏳ Queuing ICE candidate (remote description pending)");
         if (!this.pendingCandidates) {
           this.pendingCandidates = [];
         }
         this.pendingCandidates.push(candidate);
       }
     } catch (error) {
-      console.error("Error adding ICE candidate:", error);
+      console.error("❌ Error adding ICE candidate:", error);
     }
   }
 
   async processPendingCandidates() {
     if (this.pendingCandidates && this.pendingCandidates.length > 0) {
+      console.log(`✅ Processing ${this.pendingCandidates.length} queued ICE candidate(s)`);
       for (const candidate of this.pendingCandidates) {
         await this.addIceCandidate(candidate);
       }
@@ -115,6 +145,7 @@ class PeerService {
 
   async restartIce() {
     try {
+      console.log("Restarting ICE...");
       const offer = await this.peer.createOffer({ iceRestart: true });
       await this.peer.setLocalDescription(offer);
       return offer;
@@ -188,10 +219,13 @@ class PeerService {
 
       // Close the connection
       this.peer.close();
+      console.log("Peer connection closed");
     }
 
     // Clear pending candidates
     this.pendingCandidates = [];
+    this.isNegotiating = false;
+    this.makingOffer = false;
 
     // Reinitialize
     this.initializePeer();
