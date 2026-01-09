@@ -5,6 +5,7 @@ const doctorSlice = createSlice({
   initialState: {
     profile: null,
     isOnline: false,
+    appointments: [],
   },
   reducers: {
     setDoctorProfile: (state, action) => {
@@ -17,9 +18,24 @@ const doctorSlice = createSlice({
       state.profile = null;
       state.isOnline = false;
     },
+    setAppointments: (state, action) => {
+      state.appointments = action.payload;
+    },
+    updateAppointment: (state, action) => {
+      state.appointments.forEach((app) => {
+        if (app?._id === action.payload?._id) {
+          app = action.payload?.data;
+        }
+      });
+    },
   },
 });
 
-export const { setDoctorProfile, setOnlineStatus, setDoctorInitialState } =
-  doctorSlice.actions;
+export const {
+  setDoctorProfile,
+  setOnlineStatus,
+  setDoctorInitialState,
+  updateAppointment,
+  setAppointments,
+} = doctorSlice.actions;
 export default doctorSlice.reducer;

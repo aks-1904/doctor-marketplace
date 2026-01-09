@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Calendar, MessageSquare, Users, Clock, Video } from "lucide-react";
 import useAuth from "../hooks/useAuth";
+import { useSelector } from "react-redux";
 
 const DoctorDash = () => {
   const [activeTab, setActiveTab] = useState("meetings");
@@ -81,6 +82,8 @@ const DoctorDash = () => {
     },
   ];
 
+  const { user } = useSelector((store) => store?.auth);
+
   return (
     <div>
       <div className="min-h-screen bg-linear-0-to-br from-green-50 to-teal-50">
@@ -94,7 +97,7 @@ const DoctorDash = () => {
                 <h1 className="text-2xl font-bold text-gray-800">
                   Dr. Dashboard
                 </h1>
-                <p className="text-sm text-gray-600">Dr. Sarah Johnson</p>
+                <p className="text-sm text-gray-600">{user?.name}</p>
               </div>
             </div>
             <button
@@ -116,36 +119,6 @@ const DoctorDash = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Today's Meetings</p>
-                  <p className="text-3xl font-bold text-gray-800">5</p>
-                </div>
-                <Calendar className="text-green-600" size={40} />
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Unread Messages</p>
-                  <p className="text-3xl font-bold text-gray-800">12</p>
-                </div>
-                <MessageSquare className="text-blue-600" size={40} />
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Total Patients</p>
-                  <p className="text-3xl font-bold text-gray-800">47</p>
-                </div>
-                <Users className="text-purple-600" size={40} />
-              </div>
-            </div>
-          </div>
-
           <div className="flex space-x-4 mb-6 border-b border-gray-200">
             <button
               onClick={() => setActiveTab("meetings")}
@@ -158,14 +131,14 @@ const DoctorDash = () => {
               Meetings
             </button>
             <button
-              onClick={() => setActiveTab("chats")}
+              onClick={() => setActiveTab("appointment-request")}
               className={`px-6 py-3 font-semibold ${
-                activeTab === "chats"
+                activeTab === "appointment-request"
                   ? "border-b-2 border-green-600 text-green-600"
                   : "text-gray-600"
               }`}
             >
-              Patient Chats
+              Appointment Requests
             </button>
           </div>
 
@@ -218,10 +191,10 @@ const DoctorDash = () => {
             </div>
           )}
 
-          {activeTab === "chats" && (
+          {activeTab === "appointment-request" && (
             <div className="bg-white rounded-xl shadow-md p-6">
               <h3 className="text-2xl font-bold text-gray-800 mb-6">
-                Patient Conversations
+                Requests
               </h3>
               <div className="space-y-4">
                 {chats.map((chat) => (

@@ -58,3 +58,24 @@ export const updateAppointmentStatus = async (req, res) => {
     });
   }
 };
+
+export const getAllAppointments = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const doctorId = await Patient.find({ userId });
+    const appointments = await Appointment.find({ doctorId }).populate(
+      "patientId"
+    );
+    console.log(appointments);
+
+    res.status(200).json({
+      success: true,
+      appointments,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error?.message || "Unable to get your appointments",
+    });
+  }
+};
