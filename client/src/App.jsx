@@ -1,12 +1,12 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import Auth from "./pages/auth/Auth";
-import Lobby from "./screens/Lobby";
 import { SocketProvider } from "./context/SocketProvider";
-import Room from "./screens/Room";
 import UserDash from "./pages/UserDash";
 import AdminDash from "./pages/AdminDash";
 import DoctorDash from "./pages/DoctorDash";
+import Lobby from "./pages/screens/Lobby";
+import Room from "./pages/screens/Room";
 
 const App = () => {
   return (

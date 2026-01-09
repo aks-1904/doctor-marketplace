@@ -15,12 +15,14 @@ import {
   Loader2,
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [accountType, setAccountType] = useState("patient"); // patient or doctor
   const [licenseFile, setLicenseFile] = useState(null);
   const { register, login, error, loading } = useAuth();
+  const navigate = useNavigate();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -193,7 +195,7 @@ const Auth = () => {
       <div className="min-h-screen bg-gradient-to-brfrom-blue-50 via-white to-green-50 py-8 px-4">
         {/* Back Button */}
         <button
-          onClick={() => setCurrentPage("home")}
+          onClick={() => navigate("/")}
           className="mb-6 ml-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2"
         >
           ← Back to Home
@@ -689,8 +691,7 @@ const Auth = () => {
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Please
-                    Wait...
+                    <Loader2 className="h-4 w-4 animate-spin" /> Please Wait...
                   </span>
                 ) : isLogin ? (
                   "Login to Account"

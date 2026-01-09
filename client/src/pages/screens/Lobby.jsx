@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSocket } from "../context/SocketProvider";
+import { useSocket } from "../../context/SocketProvider";
 
 const Lobby = () => {
   const [email, setEmail] = useState("");
