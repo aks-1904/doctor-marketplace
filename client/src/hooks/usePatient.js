@@ -1,7 +1,7 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { setDoctors } from "../store/slices/patientSlice";
+import { addAppointment, setDoctors } from "../store/slices/patientSlice";
 
 const BACKEND_PATIENT_URL = `${
   import.meta.env.VITE_BACKEND_URL
@@ -32,7 +32,40 @@ const usePatient = () => {
     }
   };
 
-  return { getDoctors };
+  const bookAppointment = async ({
+    doctorId,
+    patientId,
+    slotDate,
+    slotTime,
+  }) => {
+    try {
+      const res = await axios.post(
+        `${BACKEND_PATIENT_URL}/book`,
+        { doctorId, patientId, slotDate, slotTime },
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (res.data?.success) {
+        dispatch(addAppointment(res.data?.appointment));
+        toast.success(res.data?.message);
+        return true;
+      }
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to book appointments"
+      );
+      return false;
+    }
+  };
+
+  return { getDoctors, bookAppointment };
 };
 
 export default usePatient;

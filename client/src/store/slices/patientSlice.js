@@ -6,6 +6,7 @@ const patientSlice = createSlice({
     profile: null,
     doctors: [],
     callHistory: [],
+    appointments: [],
   },
   reducers: {
     setPatientProfile: (state, action) => {
@@ -14,8 +15,19 @@ const patientSlice = createSlice({
     setDoctors: (state, action) => {
       state.doctors = action.payload;
     },
+    setAppointments: (state, action) => {
+      state.appointments = action.payload;
+    },
+    addAppointment: (state, action) => {
+      state.appointments.push(action.payload);
+    },
   },
 });
 
-export const { setPatientProfile, setDoctors } = patientSlice.actions;
+export const {
+  setPatientProfile,
+  setDoctors,
+  setAppointments,
+  addAppointment,
+} = patientSlice.actions;
 export default patientSlice.reducer;

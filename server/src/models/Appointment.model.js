@@ -12,13 +12,6 @@ const appointmentSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    doctorInfo: {
-      name: { type: String, required: true },
-      specialization: { type: String, required: true },
-    },
-    patientInfo: {
-      name: { type: String, required: true },
-    },
     slotDate: {
       type: String, // Format: "YYYY-MM-DD" (e.g., "2024-12-25")
       required: true,

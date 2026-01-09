@@ -137,6 +137,7 @@ export const bookAppointment = async (req, res) => {
         success: false,
         message: `Selected time is outside doctor's working hours (${dayAvailability.from} - ${dayAvailability.to})`,
       });
+      return;
     }
 
     // Collision detection logic
@@ -161,13 +162,6 @@ export const bookAppointment = async (req, res) => {
       slotDate,
       slotTime,
       patientId,
-      doctorInfo: {
-        name: doctor.userId.name,
-        specialization: doctor.specialization,
-      },
-      patientInfo: {
-        name: patient.userId.name,
-      },
       amount: doctor.consultationFee,
       status: "pending", // Update by doctor
     });
@@ -179,7 +173,7 @@ export const bookAppointment = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
-      message: "Unable to book your appointment",
+      message: error?.message || "Unable to book your appointment",
       success: false,
     });
   }
