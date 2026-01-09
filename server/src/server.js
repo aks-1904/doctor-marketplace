@@ -16,8 +16,8 @@ await connectDB();
 
 const PORT = process.env.PORT || 5000;
 
-httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on http://192.168.1.9:${PORT}`);
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
 process.on("SIGTERM", () => {

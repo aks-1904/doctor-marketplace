@@ -1,7 +1,7 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 
 import authReducer from "./slices/authSlice";
-import userReducer from "./slices/userSlice";
+import patientReducer from "./slices/patientSlice";
 import doctorReducer from "./slices/doctorSlice";
 import adminReducer from "./slices/adminSlice";
 
@@ -17,7 +17,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   auth: authReducer,
-  user: userReducer,
+  patient: patientReducer,
   doctor: doctorReducer,
   admin: adminReducer,
 });

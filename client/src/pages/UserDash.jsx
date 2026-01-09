@@ -1,55 +1,24 @@
 import React, { useState } from "react";
 import { MessageSquare, Clock, Video, Search, Star } from "lucide-react";
 import useAuth from "../hooks/useAuth";
+import { useEffect } from "react";
+import usePatient from "../hooks/usePatient";
+import { useSelector } from "react-redux";
 
 const UserDash = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
   const [chatView, setChatView] = useState(null);
   const { logout } = useAuth();
+  const { getDoctors } = usePatient();
+  const doctors = useSelector((store) => store?.patient?.doctors);
 
-  const doctors = [
-    {
-      id: 1,
-      name: "Dr. Sarah Johnson",
-      specialty: "Cardiologist",
-      rating: 4.8,
-      experience: "15 years",
-      availability: "Available",
-      image: "👩‍⚕️",
-      status: "approved",
-    },
-    {
-      id: 2,
-      name: "Dr. Michael Chen",
-      specialty: "Pediatrician",
-      rating: 4.9,
-      experience: "12 years",
-      availability: "Busy",
-      image: "👨‍⚕️",
-      status: "approved",
-    },
-    {
-      id: 3,
-      name: "Dr. Emily Williams",
-      specialty: "Dermatologist",
-      rating: 4.7,
-      experience: "10 years",
-      availability: "Available",
-      image: "👩‍⚕️",
-      status: "approved",
-    },
-    {
-      id: 4,
-      name: "Dr. James Martinez",
-      specialty: "Neurologist",
-      rating: 4.9,
-      experience: "18 years",
-      availability: "Available",
-      image: "👨‍⚕️",
-      status: "pending",
-    },
-  ];
+  useEffect(() => {
+    const getDoc = async () => {
+      await getDoctors();
+    };
+    getDoc();
+  }, []);
 
   const chats = [
     {
@@ -161,20 +130,19 @@ const UserDash = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {doctors
-                  .filter((d) => d.status === "approved")
                   .map((doctor) => (
                     <div
-                      key={doctor.id}
+                      key={doctor._id}
                       className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6"
                     >
                       <div className="flex items-center mb-4">
-                        <div className="text-5xl mr-4">{doctor.image}</div>
+                        <div className="text-5xl mr-4">👨‍⚕️</div>
                         <div className="flex-1">
                           <h3 className="font-bold text-lg text-gray-800">
-                            {doctor.name}
+                            {doctor?.userId?.name}
                           </h3>
                           <p className="text-blue-600 text-sm">
-                            {doctor.specialty}
+                            {doctor?.specialization?.map(sp=>sp + " ")}
                           </p>
                         </div>
                       </div>
@@ -185,13 +153,13 @@ const UserDash = () => {
                             size={16}
                             fill="currentColor"
                           />
-                          <span>{doctor.rating} rating</span>
+                          <span>{doctor?.ratingAvg} rating</span>
                         </div>
                         <div className="flex items-center text-sm text-gray-600">
                           <Clock className="mr-2" size={16} />
-                          <span>{doctor.experience} experience</span>
+                          <span>{doctor?.experienceYears} experience</span>
                         </div>
-                        <div className="flex items-center text-sm">
+                        {/* <div className="flex items-center text-sm">
                           <div
                             className={`w-2 h-2 rounded-full mr-2 ${
                               doctor.availability === "Available"
@@ -208,7 +176,7 @@ const UserDash = () => {
                           >
                             {doctor.availability}
                           </span>
-                        </div>
+                        </div> */}
                       </div>
                       <div className="flex space-x-2">
                         <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center">

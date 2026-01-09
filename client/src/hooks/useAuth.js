@@ -4,6 +4,9 @@ import { loginSuccess, logout as logoutUser } from "../store/slices/authSlice";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { setPatientProfile } from "../store/slices/patientSlice";
+import { setDoctorProfile } from "../store/slices/doctorSlice";
+import { setAdminProfile } from "../store/slices/adminSlice";
 
 const BACKEND_AUTH_URL = `${import.meta.env.VITE_BACKEND_URL}/api/v1/auth`;
 
@@ -49,6 +52,13 @@ const useAuth = () => {
       localStorage.setItem("token", res.data?.token);
       dispatch(loginSuccess(res.data)); // Setting the user to storage using react-redux
       navigate(`/${res.data?.user?.role}`); // Navigate user to there respective dashboard if success
+      if (res.data?.user?.role === "patient") {
+        dispatch(setPatientProfile(res.data?.profile));
+      } else if (res.data?.user?.role === "doctor") {
+        dispatch(setDoctorProfile(res.data?.profile));
+      } else if (res.data.user?.role === "admin") {
+        dispatch(setAdminProfile(res.data?.profile));
+      }
       toast.success(`${res.data?.message}`);
     } catch (error) {
       setError(error?.response?.data?.message || error?.response?.message);
