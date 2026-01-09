@@ -13,8 +13,13 @@ const adminSlice = createSlice({
     setUnverifiedDoctors: (state, action) => {
       state.unverifiedDoctors = action.payload;
     },
+    setAdminInitialState: (state, _) => {
+      state.profile = null;
+      state.unverifiedDoctors = [];
+    },
   },
 });
 
-export const { setUnverifiedDoctors, setAdminProfile } = adminSlice.actions;
+export const { setUnverifiedDoctors, setAdminProfile, setAdminInitialState } =
+  adminSlice.actions;
 export default adminSlice.reducer;

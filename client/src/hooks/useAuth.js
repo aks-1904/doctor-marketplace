@@ -4,9 +4,18 @@ import { loginSuccess, logout as logoutUser } from "../store/slices/authSlice";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { setPatientProfile } from "../store/slices/patientSlice";
-import { setDoctorProfile } from "../store/slices/doctorSlice";
-import { setAdminProfile } from "../store/slices/adminSlice";
+import {
+  setPatientInitialState,
+  setPatientProfile,
+} from "../store/slices/patientSlice";
+import {
+  setDoctorInitialState,
+  setDoctorProfile,
+} from "../store/slices/doctorSlice";
+import {
+  setAdminInitialState,
+  setAdminProfile,
+} from "../store/slices/adminSlice";
 
 const BACKEND_AUTH_URL = `${import.meta.env.VITE_BACKEND_URL}/api/v1/auth`;
 
@@ -71,8 +80,10 @@ const useAuth = () => {
     setLoading(true);
     setError(null);
     try {
-      await axios.get(`${BACKEND_AUTH_URL}/logout`); // Logout api call
       dispatch(logoutUser());
+      dispatch(setAdminInitialState());
+      dispatch(setDoctorInitialState());
+      dispatch(setPatientInitialState());
       navigate("/auth"); // navigate to login page if success
       toast.success("Loggedout successfully");
     } catch (error) {

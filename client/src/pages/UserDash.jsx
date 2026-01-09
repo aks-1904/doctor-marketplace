@@ -13,9 +13,10 @@ const UserDash = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const { logout } = useAuth();
-  const { getDoctors, bookAppointment } = usePatient();
+  const { getDoctors, bookAppointment, getAllAppointments } = usePatient();
   const doctors = useSelector((store) => store?.patient?.doctors);
   const patientId = useSelector((store) => store?.auth?.profile?._id);
+  const { appointments } = useSelector((store) => store?.patient);
 
   const getDayName = (dateStr) => {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -39,35 +40,25 @@ const UserDash = () => {
   };
 
   useEffect(() => {
-    const getDoc = async () => {
+    const initializeData = async () => {
       await getDoctors();
+      await getAllAppointments();
     };
-    getDoc();
+    initializeData();
   }, []);
 
-  const chats = [
-    {
-      id: 1,
-      patient: "John Doe",
-      lastMessage: "Thank you doctor",
-      time: "10 min ago",
-      unread: 2,
-    },
-    {
-      id: 2,
-      patient: "Jane Smith",
-      lastMessage: "When should I take the medicine?",
-      time: "1 hour ago",
-      unread: 0,
-    },
-    {
-      id: 3,
-      patient: "Alice Brown",
-      lastMessage: "I feel better now",
-      time: "2 hours ago",
-      unread: 1,
-    },
-  ];
+  const formatDate = (dateStr) =>
+    new Date(dateStr).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+  const statusColor = (status) => {
+    if (status === "confirmed") return "bg-green-100 text-green-700";
+    if (status === "cancelled") return "bg-red-100 text-red-700";
+    return "bg-yellow-100 text-yellow-700";
+  };
 
   return (
     <>
@@ -117,24 +108,14 @@ const UserDash = () => {
                 Browse Doctors
               </button>
               <button
-                onClick={() => setActiveTab("help")}
+                onClick={() => setActiveTab("appointments")}
                 className={`px-6 py-3 font-semibold ${
-                  activeTab === "help"
+                  activeTab === "appointments"
                     ? "border-b-2 border-blue-600 text-blue-600"
                     : "text-gray-600"
                 }`}
               >
-                Seek Medical Help
-              </button>
-              <button
-                onClick={() => setActiveTab("chats")}
-                className={`px-6 py-3 font-semibold ${
-                  activeTab === "chats"
-                    ? "border-b-2 border-blue-600 text-blue-600"
-                    : "text-gray-600"
-                }`}
-              >
-                My Chats
+                My Appointments
               </button>
             </div>
 
@@ -211,96 +192,60 @@ const UserDash = () => {
               </div>
             )}
 
-            {activeTab === "help" && (
-              <div className="bg-white rounded-xl shadow-md p-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6">
-                  Describe Your Medical Concern
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Symptoms
-                    </label>
-                    <textarea
-                      className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      rows="4"
-                      placeholder="Describe your symptoms in detail..."
-                    ></textarea>
+            {activeTab === "appointments" && (
+              <div>
+                {appointments.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow p-6 text-gray-500">
+                    No appointments found
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Preferred Specialty
-                    </label>
-                    <select className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                      <option>General Physician</option>
-                      <option>Cardiologist</option>
-                      <option>Dermatologist</option>
-                      <option>Pediatrician</option>
-                      <option>Neurologist</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Urgency Level
-                    </label>
-                    <div className="flex space-x-4">
-                      <button className="flex-1 py-3 border-2 border-green-500 text-green-600 rounded-lg hover:bg-green-50">
-                        Low
-                      </button>
-                      <button className="flex-1 py-3 border-2 border-yellow-500 text-yellow-600 rounded-lg hover:bg-yellow-50">
-                        Medium
-                      </button>
-                      <button className="flex-1 py-3 border-2 border-red-500 text-red-600 rounded-lg hover:bg-red-50">
-                        High
-                      </button>
-                    </div>
-                  </div>
-                  <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold">
-                    Find Available Doctor
-                  </button>
-                </div>
-              </div>
-            )}
+                ) : (
+                  <div className="space-y-4">
+                    {appointments.map((appt) => (
+                      <div
+                        key={appt._id}
+                        className="bg-white rounded-xl shadow-md p-5 flex justify-between items-center"
+                      >
+                        {/* Doctor Info */}
+                        <div>
+                          <h4 className="font-bold text-lg text-gray-800">
+                            Dr. {appt.doctorId?.userId?.name ?? "Unknown"}
+                          </h4>
 
-            {activeTab === "chats" && (
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6">
-                  Your Conversations
-                </h3>
-                <div className="space-y-4">
-                  {chats.map((chat) => (
-                    <div
-                      key={chat.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl">
-                            👨‍⚕️
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-800">
-                              Dr. {chat.patient}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {chat.lastMessage}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 mb-1">
-                            {chat.time}
+                          <p className="text-sm text-blue-600">
+                            {appt.doctorId?.specialization?.join(", ")}
                           </p>
-                          {chat.unread > 0 && (
-                            <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                              {chat.unread}
-                            </span>
-                          )}
+
+                          <p className="text-sm text-gray-500 mt-1">
+                            {formatDate(appt.slotDate)} • {appt.slotTime}
+                          </p>
+                        </div>
+
+                        {/* Meta */}
+                        <div className="text-right space-y-2">
+                          <div
+                            className={`text-xs px-3 py-1 rounded-full inline-block ${statusColor(
+                              appt.status
+                            )}`}
+                          >
+                            {appt.status.toUpperCase()}
+                          </div>
+
+                          <p className="text-sm font-semibold text-gray-800">
+                            ₹{appt.amount}
+                          </p>
+
+                          <p
+                            className={`text-xs ${
+                              appt.payment ? "text-green-600" : "text-red-500"
+                            }`}
+                          >
+                            {appt.payment ? "Paid" : "Payment Pending"}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

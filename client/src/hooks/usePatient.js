@@ -1,7 +1,11 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { addAppointment, setDoctors } from "../store/slices/patientSlice";
+import {
+  addAppointment,
+  setAppointments,
+  setDoctors,
+} from "../store/slices/patientSlice";
 
 const BACKEND_PATIENT_URL = `${
   import.meta.env.VITE_BACKEND_URL
@@ -65,7 +69,26 @@ const usePatient = () => {
     }
   };
 
-  return { getDoctors, bookAppointment };
+  const getAllAppointments = async () => {
+    try {
+      const res = await axios.get(`${BACKEND_PATIENT_URL}/appointments`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+        withCredentials: true,
+      });
+
+      if (res.data?.success) {
+        dispatch(setAppointments(res.data?.appointments));
+      }
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Unable to get your appointments"
+      );
+    }
+  };
+
+  return { getDoctors, bookAppointment, getAllAppointments };
 };
 
 export default usePatient;

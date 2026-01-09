@@ -178,3 +178,23 @@ export const bookAppointment = async (req, res) => {
     });
   }
 };
+
+export const getAllAppointment = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const patientId = await Patient.find({ userId });
+    const appointments = await Appointment.find({ patientId }).populate(
+      "doctorId"
+    );
+
+    res.status(200).json({
+      success: true,
+      appointments,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Unable to get all appointments",
+    });
+  }
+};

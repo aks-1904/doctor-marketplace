@@ -13,8 +13,13 @@ const doctorSlice = createSlice({
     setOnlineStatus: (state, action) => {
       state.isOnline = action.payload;
     },
+    setDoctorInitialState: (state, action) => {
+      state.profile = null;
+      state.isOnline = false;
+    },
   },
 });
 
-export const { setDoctorProfile, setOnlineStatus } = doctorSlice.actions;
+export const { setDoctorProfile, setOnlineStatus, setDoctorInitialState } =
+  doctorSlice.actions;
 export default doctorSlice.reducer;
