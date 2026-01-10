@@ -98,7 +98,9 @@ const AdminDash = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="text-4xl">{"👩‍⚕️"}</div>
+                          <div className="text-4xl">
+                            {doctor?.gender === "female" ? "👩‍⚕️" : "👨‍⚕️"}
+                          </div>
                           <div>
                             <h4 className="font-bold text-lg text-gray-800">
                               {doctor?.userId?.name}

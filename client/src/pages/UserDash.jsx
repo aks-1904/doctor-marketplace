@@ -142,10 +142,13 @@ const UserDash = () => {
                   {doctors.map((doctor) => (
                     <div
                       key={doctor._id}
-                      className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 flex"
+                      className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 flex flex-col justify-between"
                     >
                       <div className="flex items-center mb-4">
-                        <div className="text-5xl mr-4">👨‍⚕️</div>
+                        <div className="text-5xl mr-4">
+                          {" "}
+                          {doctor?.gender === "female" ? "👩‍⚕️" : "👨‍⚕️"}
+                        </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-lg text-gray-800">
                             {doctor?.userId?.name}
