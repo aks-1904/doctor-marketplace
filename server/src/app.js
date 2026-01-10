@@ -14,6 +14,7 @@ import {
   authenticateUser,
   authorizeRoles,
 } from "./middlewares/auth.middleware.js";
+import Appointment from "./models/Appointment.model.js";
 
 const app = express();
 
@@ -90,15 +91,79 @@ const socketIdToEmailMap = new Map();
 io.on("connection", (socket) => {
   console.log("🔌 Socket connected:", socket.id);
 
-  socket.on("room:join", ({ email, room }) => {
-    console.log("h");
-    emailToSocketIdMap.set(email, socket.id);
-    socketIdToEmailMap.set(socket.id, email);
+  socket.on("room:join", async ({ email, room, userId }) => {
+    try {
+      // 1. Find the appointment
+      const appointment = await Appointment.findOne({ roomId: room }).populate(
+        "doctorId patientId"
+      );
 
-    socket.join(room);
+      if (!appointment) {
+        socket.emit("room:error", { message: "Appointment not found" });
+        return;
+      }
 
-    io.to(room).emit("user:joined", { email, id: socket.id });
-    socket.emit("room:joined", { email, room });
+      // 2. Check Appointment Status
+      if (appointment.status === "cancelled") {
+        socket.emit("room:error", {
+          message: "This appointment has been cancelled",
+        });
+        return;
+      }
+
+      // 3. Authorization Check
+      // Ensure we safely access the populated fields
+      const doctorUserId = appointment.doctorId?.userId?.toString();
+      const patientUserId = appointment.patientId?.userId?.toString();
+
+      const isDoctor = doctorUserId === userId;
+      const isPatient = patientUserId === userId;
+
+      if (!isDoctor && !isPatient) {
+        console.log(`⛔ Access denied for user ${userId} in room ${room}`);
+        socket.emit("room:access-denied", {
+          message: "You are not authorized to join this consultation.",
+        });
+        return;
+      }
+
+      // 4. Success - Register User
+      console.log(`✅ User ${email} authorized for room ${room}`);
+
+      emailToSocketIdMap.set(email, socket.id);
+      socketIdToEmailMap.set(socket.id, email);
+
+      socket.join(room);
+
+      // 5. FIND EXISTING PEER (CRITICAL FIX)
+      // We need to check if there is already someone in the room.
+      // If yes, we send their ID to the person currently joining so they can call immediately.
+      const clients = io.sockets.adapter.rooms.get(room);
+      let remoteSocketId = null;
+
+      if (clients) {
+        for (const clientId of clients) {
+          if (clientId !== socket.id) {
+            remoteSocketId = clientId;
+            break; // Found the other person
+          }
+        }
+      }
+
+      // 6. Send Events
+      // Notify the OTHER person in the room (if any)
+      socket.to(room).emit("user:joined", { email, id: socket.id });
+
+      // Notify the JOINING person (and send them the remote ID)
+      socket.emit("room:joined", {
+        email,
+        room,
+        remoteSocketId, // This triggers the "Start Call" button on frontend
+      });
+    } catch (error) {
+      console.error("Socket Error:", error);
+      socket.emit("room:error", { message: "Internal Server Error" });
+    }
   });
 
   socket.on("user:call", ({ to, offer }) =>

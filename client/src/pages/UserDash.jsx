@@ -4,11 +4,11 @@ import useAuth from "../hooks/useAuth";
 import { useEffect } from "react";
 import usePatient from "../hooks/usePatient";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const UserDash = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
-  const [chatView, setChatView] = useState(null);
   const [bookingDoctor, setBookingDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
@@ -17,6 +17,7 @@ const UserDash = () => {
   const doctors = useSelector((store) => store?.patient?.doctors);
   const patientId = useSelector((store) => store?.auth?.profile?._id);
   const { appointments } = useSelector((store) => store?.patient);
+  const navigate = useNavigate();
 
   const getDayName = (dateStr) => {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -178,13 +179,6 @@ const UserDash = () => {
                           <Video size={16} className="mr-2" />
                           Book
                         </button>
-                        <button
-                          onClick={() => setChatView(doctor)}
-                          className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 flex items-center justify-center"
-                        >
-                          <MessageSquare size={16} className="mr-2" />
-                          Chat
-                        </button>
                       </div>
                     </div>
                   ))}
@@ -221,26 +215,37 @@ const UserDash = () => {
                         </div>
 
                         {/* Meta */}
-                        <div className="text-right space-y-2">
-                          <div
-                            className={`text-xs px-3 py-1 rounded-full inline-block ${statusColor(
-                              appt.status
-                            )}`}
+                        <div className="flex gap-3 items-center">
+                          <button
+                            onClick={() => {
+                              navigate(`/room/${appt?.roomId}`);
+                            }}
+                            className="bg-blue-600 text-white h-auto px-4 py-2 rounded-lg flex items-center hover:bg-blue-700"
                           >
-                            {appt.status.toUpperCase()}
+                            <Video size={16} className="mr-2" />
+                            Start Call
+                          </button>
+                          <div className="text-right space-y-2">
+                            <div
+                              className={`text-xs px-3 py-1 rounded-full inline-block ${statusColor(
+                                appt.status
+                              )}`}
+                            >
+                              {appt.status.toUpperCase()}
+                            </div>
+
+                            <p className="text-sm font-semibold text-gray-800">
+                              ₹{appt.amount}
+                            </p>
+
+                            <p
+                              className={`text-xs ${
+                                appt.payment ? "text-green-600" : "text-red-500"
+                              }`}
+                            >
+                              {appt.payment ? "Paid" : "Payment Pending"}
+                            </p>
                           </div>
-
-                          <p className="text-sm font-semibold text-gray-800">
-                            ₹{appt.amount}
-                          </p>
-
-                          <p
-                            className={`text-xs ${
-                              appt.payment ? "text-green-600" : "text-red-500"
-                            }`}
-                          >
-                            {appt.payment ? "Paid" : "Payment Pending"}
-                          </p>
                         </div>
                       </div>
                     ))}

@@ -1,42 +1,100 @@
-// pages/Room.jsx
-
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, MessageSquare, Shield, AlertCircle } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  PhoneOff,
+  MessageSquare,
+  Shield,
+} from "lucide-react";
 import peer from "../../service/peer";
 import { useSocket } from "../../context/SocketProvider";
 
 const Room = () => {
   const socket = useSocket();
+  const navigate = useNavigate();
+  const { roomId } = useParams();
+  const { user } = useSelector((state) => state.auth);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const negoInProgress = useRef(false);
-  
-  // Set to false to reduce console logs in production
-  const DEBUG_MODE = true;
+  const hasJoined = useRef(false); // Prevents double join in Strict Mode
 
   const [remoteSocketId, setRemoteSocketId] = useState(null);
   const [myStream, setMyStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
-
   const [micOn, setMicOn] = useState(true);
   const [cameraOn, setCameraOn] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [callStarted, setCallStarted] = useState(false);
-  
-  // Security & Connection Status
   const [connectionState, setConnectionState] = useState("new");
   const [iceConnectionState, setIceConnectionState] = useState("new");
   const [isSecureConnection, setIsSecureConnection] = useState(false);
 
   /* ============================================================
-     CONNECTION STATE MONITORING
+     1. AUTOMATIC JOIN & AUTHENTICATION
+  ============================================================ */
+  useEffect(() => {
+    if (!socket || !user || hasJoined.current) return;
+
+    // Mark as joined to prevent duplicate emissions in React StrictMode
+    hasJoined.current = true;
+
+    console.log("🔒 Attempting to join secure room:", roomId);
+    socket.emit("room:join", {
+      email: user.email,
+      room: roomId,
+      userId: user._id,
+    });
+
+    const handleRoomJoined = ({ remoteSocketId }) => {
+      console.log("✅ Joined Room. Remote Peer ID:", remoteSocketId);
+      // If the backend sends a remoteSocketId, it means someone is already here.
+      if (remoteSocketId) {
+        setRemoteSocketId(remoteSocketId);
+      }
+    };
+
+    const handleUserJoined = ({ email, id }) => {
+      console.log(`👤 User joined: ${email} (${id})`);
+      setRemoteSocketId(id);
+    };
+
+    const handleAccessDenied = ({ message }) => {
+      alert(message);
+      navigate("/");
+    };
+
+    const handleRoomError = ({ message }) => {
+      alert(message);
+      navigate("/");
+    };
+
+    socket.on("room:joined", handleRoomJoined);
+    socket.on("user:joined", handleUserJoined);
+    socket.on("room:access-denied", handleAccessDenied);
+    socket.on("room:error", handleRoomError);
+
+    return () => {
+      socket.off("room:joined", handleRoomJoined);
+      socket.off("user:joined", handleUserJoined);
+      socket.off("room:access-denied", handleAccessDenied);
+      socket.off("room:error", handleRoomError);
+      hasJoined.current = false;
+    };
+  }, [socket, roomId, user, navigate]);
+
+  /* ============================================================
+     2. CONNECTION MONITORING
   ============================================================ */
   useEffect(() => {
     const updateConnectionState = () => {
       const state = peer.peer.connectionState;
       setConnectionState(state);
-      
       if (state === "connected") {
         setIsSecureConnection(true);
       } else if (state === "failed" || state === "disconnected") {
@@ -45,36 +103,23 @@ const Room = () => {
     };
 
     const updateIceState = () => {
-      const state = peer.peer.iceConnectionState;
-      setIceConnectionState(state);
+      setIceConnectionState(peer.peer.iceConnectionState);
     };
 
     peer.peer.addEventListener("connectionstatechange", updateConnectionState);
     peer.peer.addEventListener("iceconnectionstatechange", updateIceState);
 
     return () => {
-      peer.peer.removeEventListener("connectionstatechange", updateConnectionState);
+      peer.peer.removeEventListener(
+        "connectionstatechange",
+        updateConnectionState
+      );
       peer.peer.removeEventListener("iceconnectionstatechange", updateIceState);
     };
   }, []);
 
   /* ============================================================
-     USER JOIN - ENSURE ONLY 2 USERS
-  ============================================================ */
-  const handleUserJoined = useCallback(({ id }) => {
-    if (DEBUG_MODE) console.log("👤 User joined:", id);
-    
-    if (remoteSocketId && remoteSocketId !== id) {
-      if (DEBUG_MODE) console.warn("⚠️ Already in a call with another user");
-      socket.emit("call:busy", { to: id });
-      return;
-    }
-    
-    setRemoteSocketId(id);
-  }, [remoteSocketId, socket]);
-
-  /* ============================================================
-     START CALL
+     3. CALL INITIATION & HANDLING
   ============================================================ */
   const handleCallUser = useCallback(async () => {
     try {
@@ -91,36 +136,18 @@ const Room = () => {
         peer.peer.addTrack(track, stream);
       });
 
-      // Wait a bit for tracks to be added
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Create and send offer
+      // Create offer
       const offer = await peer.getOffer();
       socket.emit("user:call", { to: remoteSocketId, offer });
-      
-      if (offer) {
-        socket.emit("user:call", { to: remoteSocketId, offer });
-        if (DEBUG_MODE) console.log("📞 Call initiated");
-      }
     } catch (err) {
-      console.error("❌ Error starting call:", err);
-      alert("Failed to access camera/microphone. Please check permissions.");
+      console.error("Failed to start call:", err);
+      alert("Could not access camera/microphone.");
     }
   }, [remoteSocketId, socket]);
 
-  /* ============================================================
-     INCOMING CALL
-  ============================================================ */
   const handleIncomingCall = useCallback(
     async ({ from, offer }) => {
-      if (DEBUG_MODE) console.log("📞 Incoming call from:", from);
-      
-      if (remoteSocketId && remoteSocketId !== from) {
-        if (DEBUG_MODE) console.warn("⚠️ Already in a call");
-        socket.emit("call:busy", { to: from });
-        return;
-      }
-      
+      console.log("📞 Incoming call from:", from);
       setRemoteSocketId(from);
 
       try {
@@ -132,186 +159,112 @@ const Room = () => {
         setMyStream(stream);
         setCallStarted(true);
 
-        // Add tracks to peer connection
         stream.getTracks().forEach((track) => {
           peer.peer.addTrack(track, stream);
         });
 
-        // Create and send answer
         const ans = await peer.getAnswer(offer);
         socket.emit("call:accepted", { to: from, ans });
-        
-        // Process any queued ICE candidates
+
+        // Process queued ICE candidates
         await peer.processPendingCandidates();
-        
-        if (DEBUG_MODE) console.log("✅ Call accepted");
       } catch (err) {
-        console.error("❌ Error accepting call:", err);
-        alert("Failed to access camera/microphone. Please check permissions.");
+        console.error("Error accepting call:", err);
       }
     },
-    [remoteSocketId, socket]
+    [socket]
   );
 
-  /* ============================================================
-     CALL ACCEPTED
-  ============================================================ */
   const handleCallAccepted = useCallback(async ({ ans }) => {
-    if (DEBUG_MODE) console.log("✅ Call accepted by remote peer");
+    console.log("✅ Call Accepted");
     await peer.setRemoteAnswer(ans);
-    
-    // Process any queued ICE candidates
     await peer.processPendingCandidates();
   }, []);
 
   /* ============================================================
-     ICE CANDIDATE HANDLING - SECURE P2P CONNECTION
-  ============================================================ */
-  useEffect(() => {
-    const handleIceCandidate = (event) => {
-      if (event.candidate && remoteSocketId) {
-        if (DEBUG_MODE) console.log("🧊 Sending ICE candidate:", event.candidate.type);
-        
-        socket.emit("peer:ice", {
-          to: remoteSocketId,
-          candidate: event.candidate,
-        });
-      } else if (!event.candidate) {
-        if (DEBUG_MODE) console.log("🧊 ICE gathering complete");
-      }
-    };
-
-    peer.peer.addEventListener("icecandidate", handleIceCandidate);
-
-    return () => {
-      peer.peer.removeEventListener("icecandidate", handleIceCandidate);
-    };
-  }, [remoteSocketId, socket]);
-
-  const handleIncomingIce = useCallback(async ({ candidate }) => {
-    await peer.addIceCandidate(candidate);
-    if (DEBUG_MODE) console.log("🧊 Received ICE candidate:", candidate?.type || "end-of-candidates");
-    if (candidate) {
-      await peer.addIceCandidate(candidate);
-    }
-  }, []);
-
-  /* ============================================================
-     REMOTE TRACK - SECURE STREAM RECEPTION
-  ============================================================ */
-  useEffect(() => {
-    const handleTrack = (ev) => {
-      if (DEBUG_MODE) console.log("📺 Received remote track");
-      const stream = ev.streams[0];
-      
-      if (remoteSocketId) {
-        setRemoteStream(stream);
-        if (DEBUG_MODE) console.log("✅ Remote stream set securely");
-      } else {
-        console.warn("⚠️ Received track from unknown peer");
-      }
-    };
-
-    peer.peer.addEventListener("track", handleTrack);
-
-    return () => {
-      peer.peer.removeEventListener("track", handleTrack);
-    };
-  }, [remoteSocketId]);
-
-  /* ============================================================
-     NEGOTIATION - DEBOUNCED AND CONTROLLED
+     4. NEGOTIATION HANDLERS
   ============================================================ */
   const handleNegoNeeded = useCallback(async () => {
-    const offer = await peer.getOffer();
-    socket.emit("peer:nego:needed", {
-      offer,
-      to: remoteSocketId,
-    });
-
-        if (negoInProgress.current || peer.peer.signalingState !== "stable") {
-      if (DEBUG_MODE) console.log("⏸️ Skipping negotiation - already in progress or not stable");
-      return;
-    }
-
-    // Skip negotiation during initial setup
-    if (!remoteSocketId || !myStream) {
-      if (DEBUG_MODE) console.log("⏸️ Skipping negotiation - not ready");
-      return;
-    }
-
-    negoInProgress.current = true;
-    if (DEBUG_MODE) console.log("🔄 Negotiation needed");
+    if (negoInProgress.current || peer.peer.signalingState !== "stable") return;
 
     try {
+      negoInProgress.current = true;
       const offer = await peer.getOffer();
-      if (offer) {
-        socket.emit("peer:nego:needed", {
-          offer,
-          to: remoteSocketId,
-        });
-      }
+      socket.emit("peer:nego:needed", { offer, to: remoteSocketId });
     } catch (error) {
-      console.error("❌ Negotiation failed:", error);
+      console.error("Negotiation failed:", error);
     } finally {
-      // Reset flag after a delay
-      setTimeout(() => {
-        negoInProgress.current = false;
-      }, 1000);
+      setTimeout(() => (negoInProgress.current = false), 1000);
     }
-  }, [remoteSocketId, socket, myStream]);
-    // Skip if already negotiating or not in a stable state
+  }, [remoteSocketId, socket]);
 
   const handleNegoIncoming = useCallback(
     async ({ from, offer }) => {
-      if (from !== remoteSocketId) {
-        console.warn("⚠️ Negotiation from unknown peer");
-        return;
-      }
-      
       const ans = await peer.getAnswer(offer);
       socket.emit("peer:nego:done", { to: from, ans });
-      if (DEBUG_MODE) console.log("🔄 Incoming negotiation");
-      
-      try {
-        const ans = await peer.getAnswer(offer);
-        socket.emit("peer:nego:done", { to: from, ans });
-      } catch (error) {
-        console.error("❌ Error handling incoming negotiation:", error);
-      }
     },
-    [remoteSocketId, socket]
+    [socket]
   );
 
-  const handleNegoFinal = useCallback(async ({ from, ans }) => {
-    if (from !== remoteSocketId) {
-      console.warn("⚠️ Final negotiation from unknown peer");
-      return;
-    }
-    
+  const handleNegoFinal = useCallback(async ({ ans }) => {
     await peer.setRemoteAnswer(ans);
-    if (DEBUG_MODE) console.log("🔄 Final negotiation");
-    
-    try {
-      await peer.setRemoteAnswer(ans);
-    } catch (error) {
-      console.error("❌ Error handling final negotiation:", error);
-    }
-  }, [remoteSocketId]);
+  }, []);
 
   useEffect(() => {
     peer.peer.addEventListener("negotiationneeded", handleNegoNeeded);
-    
     return () => {
       peer.peer.removeEventListener("negotiationneeded", handleNegoNeeded);
     };
   }, [handleNegoNeeded]);
 
   /* ============================================================
-     SOCKET EVENTS
+     5. ICE CANDIDATES & TRACKS
   ============================================================ */
   useEffect(() => {
-    socket.on("user:joined", handleUserJoined);
+    const handleIceCandidate = (event) => {
+      if (event.candidate && remoteSocketId) {
+        socket.emit("peer:ice", {
+          to: remoteSocketId,
+          candidate: event.candidate,
+        });
+      }
+    };
+
+    const handleTrack = (ev) => {
+      console.log("📺 Remote Stream Received");
+      const stream = ev.streams[0];
+      setRemoteStream(stream);
+
+      // OPTIONAL: Listen for mute/unmute events to update UI if needed
+      stream.getVideoTracks()[0].onmute = () => {
+        console.log("Remote peer turned off camera");
+        // You could set a state here like setIsRemoteCameraOn(false)
+      };
+      stream.getVideoTracks()[0].onunmute = () => {
+        console.log("Remote peer turned on camera");
+        // You could set a state here like setIsRemoteCameraOn(true)
+      };
+    };
+
+    peer.peer.addEventListener("icecandidate", handleIceCandidate);
+    peer.peer.addEventListener("track", handleTrack);
+
+    return () => {
+      peer.peer.removeEventListener("icecandidate", handleIceCandidate);
+      peer.peer.removeEventListener("track", handleTrack);
+    };
+  }, [remoteSocketId, socket]);
+
+  const handleIncomingIce = useCallback(async ({ candidate }) => {
+    if (candidate) {
+      await peer.addIceCandidate(candidate);
+    }
+  }, []);
+
+  /* ============================================================
+     6. SOCKET EVENT LISTENERS
+  ============================================================ */
+  useEffect(() => {
     socket.on("incoming:call", handleIncomingCall);
     socket.on("call:accepted", handleCallAccepted);
     socket.on("peer:nego:needed", handleNegoIncoming);
@@ -319,7 +272,6 @@ const Room = () => {
     socket.on("peer:ice", handleIncomingIce);
 
     return () => {
-      socket.off("user:joined", handleUserJoined);
       socket.off("incoming:call", handleIncomingCall);
       socket.off("call:accepted", handleCallAccepted);
       socket.off("peer:nego:needed", handleNegoIncoming);
@@ -328,7 +280,6 @@ const Room = () => {
     };
   }, [
     socket,
-    handleUserJoined,
     handleIncomingCall,
     handleCallAccepted,
     handleNegoIncoming,
@@ -337,7 +288,7 @@ const Room = () => {
   ]);
 
   /* ============================================================
-     ATTACH STREAMS TO VIDEO ELEMENTS
+     7. VIDEO REF MANAGEMENT
   ============================================================ */
   useEffect(() => {
     if (localVideoRef.current && myStream) {
@@ -352,111 +303,128 @@ const Room = () => {
   }, [remoteStream]);
 
   /* ============================================================
-     MEDIA TOGGLES
+     8. MEDIA CONTROLS
   ============================================================ */
-  const toggleMic = () => {
-    if (myStream) {
-      myStream.getAudioTracks().forEach((track) => {
-        track.enabled = !track.enabled;
-      });
-      setMicOn((prev) => !prev);
-    }
-  };
+  const toggleMic = useCallback(() => {
+    setMicOn((prev) => {
+      const newStatus = !prev; // The status we WANT to be in
 
-  const toggleCamera = () => {
-    if (myStream) {
-      myStream.getVideoTracks().forEach((track) => {
-        track.enabled = !track.enabled;
-      });
-      setCameraOn((prev) => !prev);
-    }
-  };
+      // 1. Toggle Local Stream (for your own audio feedback)
+      if (myStream) {
+        myStream.getAudioTracks().forEach((track) => {
+          track.enabled = newStatus;
+        });
+      }
 
-  /* ============================================================
-     END CALL - SECURE CLEANUP
-  ============================================================ */
+      // 2. Toggle Peer Connection Sender (CRITICAL FIX)
+      // This ensures the track actually being sent to the other user is toggled
+      if (peer.peer) {
+        const senders = peer.peer.getSenders();
+        const audioSender = senders.find(
+          (s) => s.track && s.track.kind === "audio"
+        );
+        if (audioSender && audioSender.track) {
+          audioSender.track.enabled = newStatus;
+        }
+      }
+
+      return newStatus;
+    });
+  }, [myStream]);
+
+  const toggleCamera = useCallback(() => {
+    setCameraOn((prev) => {
+      const newStatus = !prev; // The status we WANT to be in
+
+      // 1. Toggle Local Stream (for your self-view)
+      if (myStream) {
+        myStream.getVideoTracks().forEach((track) => {
+          track.enabled = newStatus;
+        });
+      }
+
+      // 2. Toggle Peer Connection Sender (CRITICAL FIX)
+      // This ensures the track actually being sent to the other user is toggled
+      if (peer.peer) {
+        const senders = peer.peer.getSenders();
+        const videoSender = senders.find(
+          (s) => s.track && s.track.kind === "video"
+        );
+        if (videoSender && videoSender.track) {
+          videoSender.track.enabled = newStatus;
+        }
+      }
+
+      return newStatus;
+    });
+  }, [myStream]);
+
   const endCall = () => {
-    
     if (myStream) {
       myStream.getTracks().forEach((track) => track.stop());
       setMyStream(null);
     }
-
-    if (remoteStream) {
-      setRemoteStream(null);
-    }
-
+    setRemoteStream(null);
     setCallStarted(false);
     setRemoteSocketId(null);
-    setChatOpen(false);
     setIsSecureConnection(false);
-    setConnectionState("new");
-    setIceConnectionState("new");
-    negoInProgress.current = false;
-
     peer.resetConnection();
-    
+    navigate(`/${user?.role}`)
   };
 
-  /* ============================================================
-     CONNECTION STATUS INDICATOR
-  ============================================================ */
   const ConnectionStatus = () => {
     if (!callStarted) return null;
+    let color = "bg-gray-500";
+    let text = "Initializing...";
 
-    const getStatusColor = () => {
-      if (isSecureConnection && connectionState === "connected") {
-        return "bg-green-500";
-      } else if (connectionState === "connecting" || iceConnectionState === "checking") {
-        return "bg-yellow-500 animate-pulse";
-      } else if (connectionState === "failed" || connectionState === "disconnected") {
-        return "bg-red-500";
-      }
-      return "bg-gray-500";
-    };
-
-    const getStatusText = () => {
-      if (isSecureConnection && connectionState === "connected") {
-        return "Secure P2P Connection";
-      } else if (connectionState === "connecting" || iceConnectionState === "checking") {
-        return "Establishing Connection...";
-      } else if (connectionState === "failed") {
-        return "Connection Failed";
-      } else if (connectionState === "disconnected") {
-        return "Disconnected";
-      }
-      return "Initializing...";
-    };
+    if (isSecureConnection && connectionState === "connected") {
+      color = "bg-green-500";
+      text = "Secure P2P Connection";
+    } else if (
+      connectionState === "connecting" ||
+      iceConnectionState === "checking"
+    ) {
+      color = "bg-yellow-500 animate-pulse";
+      text = "Establishing Connection...";
+    } else if (connectionState === "failed") {
+      color = "bg-red-500";
+      text = "Connection Failed";
+    }
 
     return (
       <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/70 px-3 py-2 rounded-lg text-sm z-20">
-        <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-        <span className="text-white">{getStatusText()}</span>
-        {isSecureConnection && (
-          <Shield className="text-green-400" size={16} />
-        )}
+        <div className={`w-2 h-2 rounded-full ${color}`} />
+        <span className="text-white">{text}</span>
+        {isSecureConnection && <Shield className="text-green-400" size={16} />}
       </div>
     );
   };
 
   /* ============================================================
-     RENDER - LOBBY VIEW
+     9. RENDER UI
   ============================================================ */
   if (!callStarted) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
         <div className="text-center mb-8">
           <Shield className="mx-auto mb-4 text-blue-400" size={64} />
-          <h1 className="text-3xl font-semibold mb-2">Secure Video Call</h1>
-          <p className="text-sm text-slate-400">End-to-end encrypted P2P connection</p>
+          <h1 className="text-3xl font-semibold mb-2">Secure Consultation</h1>
+          <p className="text-sm text-slate-400">
+            Verifying Identity & Encryption...
+          </p>
         </div>
-        
-       
+
+        <div className="bg-slate-800 p-6 rounded-xl mb-6 text-center min-w-75">
+          <h2 className="text-xl font-bold text-white mb-2">Room: {roomId}</h2>
+          <p className="text-slate-400">
+            Logged in as: <span className="text-blue-400">{user?.email}</span>
+          </p>
+        </div>
 
         <p className="text-sm text-slate-400 mb-6">
-          {remoteSocketId 
-            ? "✅ Peer connected - Ready to call" 
-            : "⏳ Waiting for peer to join..."}
+          {remoteSocketId
+            ? "✅ Participant connected"
+            : "⏳ Waiting for participant..."}
         </p>
 
         {remoteSocketId && (
@@ -465,21 +433,16 @@ const Room = () => {
             className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2"
           >
             <Shield size={20} />
-            Start Secure Call
+            Start Consultation
           </button>
         )}
       </div>
     );
   }
 
-  /* ============================================================
-     RENDER - CALL VIEW
-  ============================================================ */
   return (
     <div className="h-screen w-full bg-gray-900 flex flex-col relative">
       <ConnectionStatus />
-
-      {/* Video Section */}
       <div className="flex-1 grid grid-cols-2 gap-2 p-2">
         {/* Local Video */}
         <div className="relative bg-black rounded-xl overflow-hidden">
@@ -489,19 +452,18 @@ const Room = () => {
               autoPlay
               muted
               playsInline
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transform scale-x-[-1]"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-gray-400 bg-gray-800">
-              <div className="text-center">
-                <VideoOff className="mx-auto mb-2" size={48} />
-                <span className="text-lg">Camera Off</span>
-              </div>
+              <VideoOff size={48} />
             </div>
           )}
           <div className="absolute bottom-3 left-3 bg-black/70 px-3 py-1 rounded text-sm flex items-center gap-2">
-            You
-            {isSecureConnection && <Shield className="text-green-400" size={14} />}
+            You{" "}
+            {isSecureConnection && (
+              <Shield className="text-green-400" size={14} />
+            )}
           </div>
         </div>
 
@@ -516,10 +478,7 @@ const Room = () => {
             />
           ) : (
             <div className="h-full w-full bg-gray-800 flex items-center justify-center text-white">
-              <div className="text-center">
-                <div className="animate-pulse mb-2">⏳</div>
-                <span className="text-lg">Connecting to peer...</span>
-              </div>
+              <div className="animate-pulse">Connecting video...</div>
             </div>
           )}
           {remoteStream && (
@@ -530,44 +489,26 @@ const Room = () => {
         </div>
       </div>
 
-      {/* Chat Panel */}
+      {/* Chat Sidebar */}
       {chatOpen && (
         <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl flex flex-col z-10">
           <div className="p-4 border-b font-semibold flex items-center justify-between">
             <span>Secure Chat</span>
-            <button
-              onClick={() => setChatOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
+            <button onClick={() => setChatOpen(false)}>✕</button>
           </div>
-          <div className="flex-1 p-3 overflow-y-auto text-sm text-gray-600">
-            <div className="text-center text-xs text-gray-400 mb-4">
-              🔒 End-to-end encrypted
-            </div>
-            No messages yet
-          </div>
-          <div className="p-3 border-t">
-            <input
-              type="text"
-              placeholder="Type a secure message"
-              className="w-full px-3 py-2 border rounded-lg outline-none focus:border-blue-500"
-            />
+          <div className="flex-1 p-3 text-sm text-gray-600">
+            Chat feature would go here...
           </div>
         </div>
       )}
 
-      {/* Controls */}
+      {/* Bottom Controls */}
       <div className="h-20 bg-gray-800 flex items-center justify-center gap-6">
         <button
           onClick={toggleMic}
-          className={`p-4 rounded-full transition-colors ${
-            micOn 
-              ? "bg-gray-600 hover:bg-gray-500" 
-              : "bg-red-600 hover:bg-red-700"
+          className={`p-4 rounded-full ${
+            micOn ? "bg-gray-600 hover:bg-gray-500" : "bg-red-600"
           }`}
-          title={micOn ? "Mute" : "Unmute"}
         >
           {micOn ? (
             <Mic className="text-white" />
@@ -575,15 +516,11 @@ const Room = () => {
             <MicOff className="text-white" />
           )}
         </button>
-
         <button
           onClick={toggleCamera}
-          className={`p-4 rounded-full transition-colors ${
-            cameraOn 
-              ? "bg-gray-600 hover:bg-gray-500" 
-              : "bg-red-600 hover:bg-red-700"
+          className={`p-4 rounded-full ${
+            cameraOn ? "bg-gray-600 hover:bg-gray-500" : "bg-red-600"
           }`}
-          title={cameraOn ? "Turn off camera" : "Turn on camera"}
         >
           {cameraOn ? (
             <Video className="text-white" />
@@ -591,29 +528,21 @@ const Room = () => {
             <VideoOff className="text-white" />
           )}
         </button>
-
         <button
           onClick={endCall}
-          className="p-4 rounded-full bg-red-700 hover:bg-red-800 transition-colors"
-          title="End call"
+          className="p-4 rounded-full bg-red-700 hover:bg-red-800"
         >
           <PhoneOff className="text-white" />
         </button>
-
         <button
           onClick={() => setChatOpen(!chatOpen)}
-          className={`p-4 rounded-full transition-colors ${
-            chatOpen 
-              ? "bg-blue-600 hover:bg-blue-700" 
-              : "bg-gray-600 hover:bg-gray-500"
-          }`}
-          title="Toggle chat"
+          className="p-4 rounded-full bg-gray-600 hover:bg-gray-500"
         >
           <MessageSquare className="text-white" />
         </button>
       </div>
     </div>
-  )
+  );
 };
 
 export default Room;

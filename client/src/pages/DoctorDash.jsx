@@ -3,6 +3,7 @@ import { Calendar, Clock, Video } from "lucide-react";
 import { useSelector } from "react-redux";
 import useAuth from "../hooks/useAuth";
 import useDoctor from "../hooks/useDoctor";
+import { useNavigate } from "react-router-dom";
 
 const DoctorDash = () => {
   const { logout } = useAuth();
@@ -12,6 +13,8 @@ const DoctorDash = () => {
   const { user } = useSelector((store) => store?.auth);
 
   const [activeTab, setActiveTab] = useState("meetings");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     getAllAppointments();
@@ -122,7 +125,12 @@ const DoctorDash = () => {
 
                     {/* Actions */}
                     <div className="flex gap-2">
-                      <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700">
+                      <button
+                        onClick={() => {
+                          navigate(`/room/${appt?.roomId}`);
+                        }}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700"
+                      >
                         <Video size={16} className="mr-2" />
                         Start Call
                       </button>
