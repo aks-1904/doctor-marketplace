@@ -25,6 +25,14 @@ const adminSlice = createSlice({
     setAllUsers: (state, action) => {
       state.allUsers = action.payload;
     },
+    addApprovedDoctors: (state, action) => {
+      state.approvedDoctors.push(action.payload);
+    },
+    removeUnverifiedDoctors: (state, action) => {
+      state.unverifiedDoctors = state.unverifiedDoctors.filter(
+        (doc) => doc?._id !== action.payload?._id
+      );
+    },
   },
 });
 
@@ -34,5 +42,7 @@ export const {
   setAdminInitialState,
   setApprovedDoctors,
   setAllUsers,
+  addApprovedDoctors,
+  removeUnverifiedDoctors,
 } = adminSlice.actions;
 export default adminSlice.reducer;

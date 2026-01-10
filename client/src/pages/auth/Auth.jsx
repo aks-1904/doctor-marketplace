@@ -137,6 +137,7 @@ const Auth = () => {
       fd.append("experienceYears", formData.experienceYears);
       fd.append("consultationFee", formData.consultationFee);
       fd.append("licenseNumber", formData.licenseNumber);
+      fd.append("gender", formData.gender);
 
       // arrays — append individually
       formData.specialization.forEach((item) =>
@@ -449,6 +450,22 @@ const Auth = () => {
                   {/* Doctor-specific fields */}
                   {accountType === "doctor" && (
                     <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Gender
+                        </label>
+                        <select
+                          name="gender"
+                          value={formData.gender}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="">Select</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                           <Stethoscope className="w-4 h-4 inline mr-2" />

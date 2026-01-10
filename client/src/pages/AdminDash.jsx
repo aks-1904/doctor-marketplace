@@ -103,7 +103,7 @@ const AdminDash = () => {
                               {doctor?.userId?.name}
                             </h4>
                             <p className="text-sm text-gray-600">
-                              {doctor?.specialization[0]}
+                              {doctor?.specialization.map((sp) => sp + " ")}
                             </p>
                             <p className="text-sm text-gray-500">
                               {doctor.experienceYears} years of experience
@@ -123,7 +123,16 @@ const AdminDash = () => {
                             <CheckCircle size={16} className="mr-2" />
                             Approve
                           </button>
-                          <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center">
+                          <button
+                            onClick={() => {
+                              updateVerificationStatus({
+                                doctorId: doctor?.userId?._id,
+                                updatedVerificationStatus: "rejected",
+                                rejectedReason: "Achi nahi lagi",
+                              });
+                            }}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
+                          >
                             <XCircle size={16} className="mr-2" />
                             Reject
                           </button>

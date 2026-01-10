@@ -2,6 +2,8 @@ import axios from "axios";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import {
+  addApprovedDoctors,
+  removeUnverifiedDoctors,
   setAllUsers,
   setApprovedDoctors,
   setUnverifiedDoctors,
@@ -57,6 +59,12 @@ const useAdmin = () => {
       );
 
       if (res.data?.success) {
+        if (updatedVerificationStatus === "approved") {
+          dispatch(addApprovedDoctors(res.data?.doctor));
+          dispatch(removeUnverifiedDoctors(res.data?.doctor));
+        } else if (updatedVerificationStatus === "rejected") {
+          dispatch(removeUnverifiedDoctors(res.data?.doctor));
+        }
         toast.success(res.data?.message);
       }
     } catch (error) {
@@ -95,7 +103,6 @@ const useAdmin = () => {
       });
 
       if (res.data?.success) {
-        
         dispatch(setAllUsers(res.data?.users));
       }
     } catch (error) {
