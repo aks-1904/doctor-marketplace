@@ -4,6 +4,7 @@ import User from "../models/User.model.js";
 export const updateVerificationStatusDoctor = async (req, res) => {
   try {
     const { doctorId, updatedVerificationStatus, rejectedReason } = req.body;
+    console.log(doctorId);
 
     // Basic validation
     if (!["approved", "rejected"].includes(updatedVerificationStatus)) {
@@ -22,6 +23,7 @@ export const updateVerificationStatusDoctor = async (req, res) => {
     }
 
     const doctor = await Doctor.findOne({ userId: doctorId });
+    console.log(doctor);
 
     // Checking doctor account exists
     if (!doctor) {

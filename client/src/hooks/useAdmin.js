@@ -31,7 +31,28 @@ const useAdmin = () => {
     }
   };
 
-  return { getAllUnverifiedDoctors };
+  const updateVerificationStatus = async ({doctorId, updatedVerificationStatus, rejectedReason})=>{
+    try {
+      const res = await axios.post(`${BACKEND_ADMIN_URL}/update-verification-status`, {
+        updatedVerificationStatus,
+        doctorId,
+        rejectedReason,
+      }, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`
+        },
+        withCredentials: true,
+      })
+
+      if(res.data?.success){
+        toast.success(res.data?.message);
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Unable to update verification status")
+    }
+  }
+
+  return { getAllUnverifiedDoctors, updateVerificationStatus };
 };
 
 export default useAdmin;
