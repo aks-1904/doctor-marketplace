@@ -22,7 +22,7 @@ export const updateVerificationStatusDoctor = async (req, res) => {
       return;
     }
 
-    const doctor = await Doctor.findOne({ userId: doctorId });
+    let doctor = await Doctor.findOne({ userId: doctorId });
 
     // Checking doctor account exists
     if (!doctor) {
@@ -48,9 +48,12 @@ export const updateVerificationStatusDoctor = async (req, res) => {
     doctor.verification.status = updatedVerificationStatus;
     await doctor.save();
 
+    doctor = await Doctor.findOne({ userId: doctorId }).populate("userId");
+
     res.status(200).json({
       message: "Doctor Status updated",
       success: true,
+      doctor,
     });
   } catch (error) {
     res.status(500).json({

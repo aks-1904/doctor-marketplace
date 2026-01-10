@@ -104,6 +104,11 @@ const doctorSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    gender: {
+      type: String,
+      required: true,
+      enum: ["male", "female", "other"],
+    },
   },
   {
     timestamps: true,

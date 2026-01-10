@@ -14,10 +14,10 @@ export const register = async (req, res) => {
       phone,
       password,
       role,
+      gender,
 
       // patient fields
       age,
-      gender,
 
       // doctor fields
       specialization,
@@ -40,7 +40,7 @@ export const register = async (req, res) => {
     }
 
     // Basic validation
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password || !phone || !gender) {
       res.status(400).json({
         message: "Missing required fields",
         success: false,
@@ -139,6 +139,7 @@ export const register = async (req, res) => {
           status: "pending",
         },
         languages,
+        gender,
       });
     }
 
