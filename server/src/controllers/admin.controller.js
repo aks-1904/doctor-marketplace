@@ -1,5 +1,6 @@
 import Doctor from "../models/Doctor.model.js";
 import User from "../models/User.model.js";
+import Patient from "../models/Patient.model.js";
 
 export const updateVerificationStatusDoctor = async (req, res) => {
   try {
@@ -173,9 +174,9 @@ export const getAllApprovedDoctor = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).populate("userId");
+    const users = await User.find({ role: "patient" });
     res.status(200).json({
-      success: false,
+      success: true,
       users,
     });
   } catch (error) {

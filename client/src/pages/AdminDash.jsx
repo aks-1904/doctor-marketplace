@@ -14,79 +14,23 @@ import { useSelector } from "react-redux";
 const AdminDash = () => {
   const [activeTab, setActiveTab] = useState("doctors");
   const { logout } = useAuth();
-  const { getAllUnverifiedDoctors, updateVerificationStatus } = useAdmin();
-  const { unverifiedDoctors } = useSelector((store) => store.admin);
+  const {
+    getAllUnverifiedDoctors,
+    updateVerificationStatus,
+    getAllApprovedDoctors,
+    getAllUsers,
+  } = useAdmin();
+  const { unverifiedDoctors, approvedDoctors, allUsers } = useSelector(
+    (store) => store.admin
+  );
+
+  const doctors = approvedDoctors;
 
   useEffect(() => {
     getAllUnverifiedDoctors();
+    getAllApprovedDoctors();
+    getAllUsers();
   }, []);
-
-  const doctors = [
-    {
-      id: 1,
-      name: "Dr. Sarah Johnson",
-      specialty: "Cardiologist",
-      rating: 4.8,
-      experience: "15 years",
-      availability: "Available",
-      image: "👩‍⚕️",
-      status: "approved",
-    },
-    {
-      id: 2,
-      name: "Dr. Michael Chen",
-      specialty: "Pediatrician",
-      rating: 4.9,
-      experience: "12 years",
-      availability: "Busy",
-      image: "👨‍⚕️",
-      status: "approved",
-    },
-    {
-      id: 3,
-      name: "Dr. Emily Williams",
-      specialty: "Dermatologist",
-      rating: 4.7,
-      experience: "10 years",
-      availability: "Available",
-      image: "👩‍⚕️",
-      status: "approved",
-    },
-    {
-      id: 4,
-      name: "Dr. James Martinez",
-      specialty: "Neurologist",
-      rating: 4.9,
-      experience: "18 years",
-      availability: "Available",
-      image: "👨‍⚕️",
-      status: "pending",
-    },
-  ];
-
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@email.com",
-      status: "active",
-      joinDate: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@email.com",
-      status: "active",
-      joinDate: "2024-02-20",
-    },
-    {
-      id: 3,
-      name: "Bob Wilson",
-      email: "bob@email.com",
-      status: "blocked",
-      joinDate: "2024-03-10",
-    },
-  ];
 
   return (
     <div>
@@ -190,93 +134,93 @@ const AdminDash = () => {
                 </div>
               )}
 
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">
-                  Approved Doctors
-                </h3>
-                {doctors
-                  .filter((d) => d.status === "approved")
-                  .map((doctor) => (
-                    <div
-                      key={doctor.id}
-                      className="border border-gray-200 rounded-lg p-4 mb-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="text-4xl">{doctor.image}</div>
-                          <div>
-                            <h4 className="font-bold text-lg text-gray-800">
-                              {doctor.name}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {doctor.specialty}
-                            </p>
-                            <div className="flex items-center mt-1">
-                              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                                Active
-                              </span>
+              {doctors && (
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">
+                    Approved Doctors
+                  </h3>
+                  {doctors &&
+                    doctors.map((doctor) => (
+                      <div
+                        key={doctor._id}
+                        className="border border-gray-200 rounded-lg p-4 mb-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="text-4xl">👨</div>
+                            <div>
+                              <h4 className="font-bold text-lg text-gray-800">
+                                {doctor.userId?.name}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {doctor.specialization.map((sp) => sp + " ")}
+                              </p>
+                              <div className="flex items-center mt-1">
+                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                  Active
+                                </span>
+                              </div>
                             </div>
                           </div>
+                          <button className="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200">
+                            Suspend
+                          </button>
                         </div>
-                        <button className="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200">
-                          Suspend
-                        </button>
                       </div>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === "users" && (
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                User Management
-              </h3>
-              <div className="space-y-4">
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="border border-gray-200 rounded-lg p-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-bold text-gray-800">{user.name}</h4>
-                        <p className="text-sm text-gray-600 flex items-center mt-1">
-                          <Mail size={14} className="mr-2" />
-                          {user.email}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Joined: {user.joinDate}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                            user.status === "active"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
+            <>
+              {allUsers.length !== 0 && (
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">
+                    User Management
+                  </h3>
+                  <div className="space-y-4">
+                    {allUsers &&
+                      allUsers.map((user) => (
+                        <div
+                          key={user._id}
+                          className="border border-gray-200 rounded-lg p-4"
                         >
-                          {user.status}
-                        </span>
-                        {user.status === "active" ? (
-                          <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center">
-                            <UserX size={16} className="mr-2" />
-                            Block
-                          </button>
-                        ) : (
-                          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
-                            <UserCheck size={16} className="mr-2" />
-                            Unblock
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-bold text-gray-800">
+                                {user.name}
+                              </h4>
+                              <p className="text-sm text-gray-600 flex items-center mt-1">
+                                <Mail size={14} className="mr-2" />
+                                {user.email}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Joined: {user.createdAt}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              {!user.isBlocked ? (
+                                <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center">
+                                  <UserX size={16} className="mr-2" />
+                                  Block
+                                </button>
+                              ) : (
+                                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+                                  <UserCheck size={16} className="mr-2" />
+                                  Unblock
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
+              {allUsers.length === 0 && <h1>No users</h1>}
+            </>
           )}
         </div>
       </div>

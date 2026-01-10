@@ -182,10 +182,24 @@ export const bookAppointment = async (req, res) => {
 export const getAllAppointment = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const patientId = await Patient.find({ userId });
-    const appointments = await Appointment.find({ patientId }).populate(
-      "doctorId"
-    );
+
+    const patient = await Patient.findOne({ userId });
+
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: "Patient not found",
+      });
+    }
+
+    const appointments = await Appointment.find({
+      patientId: patient._id,
+    }).populate({
+      path: "doctorId",
+      populate: {
+        path: "userId",
+      },
+    });
 
     res.status(200).json({
       success: true,

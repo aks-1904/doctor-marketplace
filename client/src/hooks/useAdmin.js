@@ -1,7 +1,11 @@
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
-import { setUnverifiedDoctors } from "../store/slices/adminSlice";
+import {
+  setAllUsers,
+  setApprovedDoctors,
+  setUnverifiedDoctors,
+} from "../store/slices/adminSlice";
 
 const BACKEND_ADMIN_URL = `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin`;
 const TOKEN = localStorage.getItem("token");
@@ -31,28 +35,82 @@ const useAdmin = () => {
     }
   };
 
-  const updateVerificationStatus = async ({doctorId, updatedVerificationStatus, rejectedReason})=>{
+  const updateVerificationStatus = async ({
+    doctorId,
+    updatedVerificationStatus,
+    rejectedReason,
+  }) => {
     try {
-      const res = await axios.post(`${BACKEND_ADMIN_URL}/update-verification-status`, {
-        updatedVerificationStatus,
-        doctorId,
-        rejectedReason,
-      }, {
-        headers: {
-          Authorization: `Bearer ${TOKEN}`
+      const res = await axios.post(
+        `${BACKEND_ADMIN_URL}/update-verification-status`,
+        {
+          updatedVerificationStatus,
+          doctorId,
+          rejectedReason,
         },
-        withCredentials: true,
-      })
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+          withCredentials: true,
+        }
+      );
 
-      if(res.data?.success){
+      if (res.data?.success) {
         toast.success(res.data?.message);
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Unable to update verification status")
+      toast.error(
+        error?.response?.data?.message || "Unable to update verification status"
+      );
     }
-  }
+  };
 
-  return { getAllUnverifiedDoctors, updateVerificationStatus };
+  const getAllApprovedDoctors = async () => {
+    try {
+      const res = await axios.get(`${BACKEND_ADMIN_URL}/doctors`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+        withCredentials: true,
+      });
+
+      if (res.data?.success) {
+        dispatch(setApprovedDoctors(res.data?.doctors));
+      }
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Unable to get all approved doctors"
+      );
+    }
+  };
+
+  const getAllUsers = async () => {
+    try {
+      const res = await axios.get(`${BACKEND_ADMIN_URL}/users`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+        withCredentials: true,
+      });
+
+      if (res.data?.success) {
+        
+        dispatch(setAllUsers(res.data?.users));
+      }
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Unable to get all approved users"
+      );
+    }
+  };
+
+  return {
+    getAllUnverifiedDoctors,
+    updateVerificationStatus,
+    getAllApprovedDoctors,
+    getAllUsers,
+  };
 };
 
 export default useAdmin;
