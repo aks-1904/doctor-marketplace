@@ -2,7 +2,6 @@ import express from "express";
 import http from "http";
 import cors from "cors";
 import helmet from "helmet";
-import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 
@@ -33,6 +32,7 @@ app.use(
 );
 
 if (process.env.NODE_ENV !== "production") {
+  const morgan = (await import("morgan")).default;
   app.use(morgan("dev"));
 }
 
