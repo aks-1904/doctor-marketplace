@@ -1,10 +1,18 @@
 import { useState } from "react";
-import { MessageSquare, Clock, Video, Search, Star } from "lucide-react";
+import {
+  MessageSquare,
+  Clock,
+  Video,
+  Search,
+  Star,
+  IndianRupee,
+} from "lucide-react";
 import useAuth from "../hooks/useAuth";
 import { useEffect } from "react";
 import usePatient from "../hooks/usePatient";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import useStripePayment from "../hooks/useStripe";
 
 const UserDash = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,6 +26,8 @@ const UserDash = () => {
   const patientId = useSelector((store) => store?.auth?.profile?._id);
   const { appointments } = useSelector((store) => store?.patient);
   const navigate = useNavigate();
+  const { redirectToCheckout } = useStripePayment();
+  const userId = useSelector((store) => store?.auth?.user?._id);
 
   const getDayName = (dateStr) => {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -219,15 +229,27 @@ const UserDash = () => {
 
                         {/* Meta */}
                         <div className="flex gap-3 items-center">
-                          <button
-                            onClick={() => {
-                              navigate(`/room/${appt?.roomId}`);
-                            }}
-                            className="bg-blue-600 text-white h-auto px-4 py-2 rounded-lg flex items-center hover:bg-blue-700"
-                          >
-                            <Video size={16} className="mr-2" />
-                            Start Call
-                          </button>
+                          {appt.status === "completed" ? (
+                            <button
+                              onClick={() => {
+                                redirectToCheckout(appt?._id, userId);
+                              }}
+                              className="bg-blue-600 text-white h-auto px-4 py-2 rounded-lg flex items-center hover:bg-blue-700"
+                            >
+                              <IndianRupee size={16} className="mr-2" />
+                              Make Payment
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                navigate(`/room/${appt?.roomId}`);
+                              }}
+                              className="bg-blue-600 text-white h-auto px-4 py-2 rounded-lg flex items-center hover:bg-blue-700"
+                            >
+                              <Video size={16} className="mr-2" />
+                              Start Call
+                            </button>
+                          )}
                           <div className="text-right space-y-2">
                             <div
                               className={`text-xs px-3 py-1 rounded-full inline-block ${statusColor(

@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import patientRoutes from "./routes/patient.routes.js";
 import doctorRoutes from "./routes/doctor.routes.js";
+import stripeRoutes from "./routes/stripe.routes.js";
 import {
   authenticateUser,
   authorizeRoles,
@@ -69,6 +70,7 @@ app.use(
   authorizeRoles("admin", "doctor"),
   doctorRoutes
 );
+app.use("/api/v1/payments", stripeRoutes);
 
 /* =======================
    HTTP + SOCKET
