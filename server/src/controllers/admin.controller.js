@@ -4,7 +4,6 @@ import User from "../models/User.model.js";
 export const updateVerificationStatusDoctor = async (req, res) => {
   try {
     const { doctorId, updatedVerificationStatus, rejectedReason } = req.body;
-    console.log(doctorId);
 
     // Basic validation
     if (!["approved", "rejected"].includes(updatedVerificationStatus)) {
@@ -23,7 +22,6 @@ export const updateVerificationStatusDoctor = async (req, res) => {
     }
 
     const doctor = await Doctor.findOne({ userId: doctorId });
-    console.log(doctor);
 
     // Checking doctor account exists
     if (!doctor) {
@@ -151,6 +149,39 @@ export const getAllUnverifiedDoctor = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Cannot get unverified doctors",
+    });
+  }
+};
+
+export const getAllApprovedDoctor = async (req, res) => {
+  try {
+    const doctors = await Doctor.find({
+      "verification.status": "approved",
+    }).populate("userId");
+
+    res.status(200).json({
+      success: true,
+      doctors,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Unable to get approved doctors",
+    });
+  }
+};
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).populate("userId");
+    res.status(200).json({
+      success: false,
+      users,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Unable to get all users",
     });
   }
 };
