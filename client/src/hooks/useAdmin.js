@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import {
   addApprovedDoctors,
+  removeApprovedDoctor,
   removeUnverifiedDoctors,
   setAllUsers,
   setApprovedDoctors,
@@ -64,6 +65,7 @@ const useAdmin = () => {
           dispatch(removeUnverifiedDoctors(res.data?.doctor));
         } else if (updatedVerificationStatus === "rejected") {
           dispatch(removeUnverifiedDoctors(res.data?.doctor));
+          dispatch(removeApprovedDoctor(res.data?.doctor));
         }
         toast.success(res.data?.message);
       }
@@ -112,11 +114,36 @@ const useAdmin = () => {
     }
   };
 
+  const blockAndUnblockUser = async ({ status, userId }) => {
+    try {
+      const res = await axios.post(
+        `${BACKEND_ADMIN_URL}/${status}`,
+        {
+          userId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (res.data?.success) {
+        getAllUsers();
+        toast.success(res.data?.message || "Updated user status");
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+    }
+  };
+
   return {
     getAllUnverifiedDoctors,
     updateVerificationStatus,
     getAllApprovedDoctors,
     getAllUsers,
+    blockAndUnblockUser,
   };
 };
 

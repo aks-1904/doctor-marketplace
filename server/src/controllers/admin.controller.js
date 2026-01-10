@@ -89,7 +89,7 @@ export const blockUser = async (req, res) => {
 
     res.status(200).json({
       message: "Blocked user",
-      success: false,
+      success: true,
     });
   } catch (error) {
     res.status(500).json({
@@ -125,7 +125,7 @@ export const unblockUser = async (req, res) => {
 
     res.status(200).json({
       message: "Unblocked user",
-      success: false,
+      success: true,
     });
   } catch (error) {
     res.status(500).json({

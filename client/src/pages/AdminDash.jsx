@@ -19,6 +19,7 @@ const AdminDash = () => {
     updateVerificationStatus,
     getAllApprovedDoctors,
     getAllUsers,
+    blockAndUnblockUser,
   } = useAdmin();
   const { unverifiedDoctors, approvedDoctors, allUsers } = useSelector(
     (store) => store.admin
@@ -164,14 +165,18 @@ const AdminDash = () => {
                               <p className="text-sm text-gray-600">
                                 {doctor.specialization.map((sp) => sp + " ")}
                               </p>
-                              <div className="flex items-center mt-1">
-                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                                  Active
-                                </span>
-                              </div>
                             </div>
                           </div>
-                          <button className="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200">
+                          <button
+                            onClick={() => {
+                              updateVerificationStatus({
+                                doctorId: doctor?.userId?._id,
+                                updatedVerificationStatus: "rejected",
+                                rejectedReason: "Didn't like",
+                              });
+                            }}
+                            className="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200"
+                          >
                             Suspend
                           </button>
                         </div>
@@ -211,12 +216,28 @@ const AdminDash = () => {
                             </div>
                             <div className="flex items-center space-x-3">
                               {!user.isBlocked ? (
-                                <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center">
+                                <button
+                                  onClick={() => {
+                                    blockAndUnblockUser({
+                                      status: "block",
+                                      userId: user?._id,
+                                    });
+                                  }}
+                                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
+                                >
                                   <UserX size={16} className="mr-2" />
                                   Block
                                 </button>
                               ) : (
-                                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+                                <button
+                                  onClick={() => {
+                                    blockAndUnblockUser({
+                                      status: "unblock",
+                                      userId: user?._id,
+                                    });
+                                  }}
+                                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
+                                >
                                   <UserCheck size={16} className="mr-2" />
                                   Unblock
                                 </button>
