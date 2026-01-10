@@ -22,11 +22,9 @@ const doctorSlice = createSlice({
       state.appointments = action.payload;
     },
     updateAppointment: (state, action) => {
-      state.appointments.forEach((app) => {
-        if (app?._id === action.payload?._id) {
-          app = action.payload?.data;
-        }
-      });
+      state.appointments = state.appointments.map((app) =>
+        app._id === action.payload._id ? action.payload : app
+      );
     },
   },
 });

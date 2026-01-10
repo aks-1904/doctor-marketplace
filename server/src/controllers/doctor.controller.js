@@ -1,4 +1,6 @@
 import Appointment from "../models/Appointment.model.js";
+import Doctor from "../models/Doctor.model.js";
+import { v4 as uuid } from "uuid";
 
 export const updateAppointmentStatus = async (req, res) => {
   try {
@@ -32,7 +34,8 @@ export const updateAppointmentStatus = async (req, res) => {
     }
 
     // Checking if requested doctor is allowed to update the status
-    if (appointment.doctorId !== req.user) {
+    const doctor = await Doctor.findOne({ userId: req.user?.userId });
+    if (!appointment.doctorId.equals(doctor._id)) {
       res.status(401).json({
         success: false,
         message: "You doesn't have permission to update the status",
@@ -42,11 +45,18 @@ export const updateAppointmentStatus = async (req, res) => {
 
     // Updating status
     appointment.status = status;
+
+    if (status === "confirmed") {
+      // Creating a room Id
+      const roomId = uuid();
+      appointment.roomId = roomId;
+    }
+
     await appointment.save();
 
     // Success response
     res.status(200).json({
-      success: false,
+      success: true,
       message: "Appointment status updated successfully",
       data: appointment,
     });
@@ -62,17 +72,18 @@ export const updateAppointmentStatus = async (req, res) => {
 export const getAllAppointments = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const doctorId = await Patient.find({ userId });
+
+    const doctorId = await Doctor.find({ userId });
     const appointments = await Appointment.find({ doctorId }).populate(
       "patientId"
     );
-    console.log(appointments);
 
     res.status(200).json({
       success: true,
       appointments,
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       success: false,
       message: error?.message || "Unable to get your appointments",

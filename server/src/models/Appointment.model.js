@@ -9,7 +9,7 @@ const appointmentSchema = new mongoose.Schema(
     },
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Patient",
       required: true,
     },
     slotDate: {
@@ -32,6 +32,10 @@ const appointmentSchema = new mongoose.Schema(
     payment: {
       type: Boolean,
       default: false,
+    },
+    roomId: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }
