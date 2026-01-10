@@ -5,7 +5,7 @@ import { SocketProvider } from "./context/SocketProvider";
 import UserDash from "./pages/UserDash";
 import AdminDash from "./pages/AdminDash";
 import DoctorDash from "./pages/DoctorDash";
-import Lobby from "./pages/screens/Lobby";
+
 import Room from "./pages/screens/Room";
 
 const App = () => {
@@ -15,7 +15,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/lobby" element={<Lobby />} />
+          
           <Route path="/room/:roomId" element={<Room />} />
           <Route path="/patient" element={<UserDash />} />
           <Route path="/admin" element={<AdminDash />} />

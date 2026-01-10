@@ -4,7 +4,6 @@ import Patient from "../models/Patient.model.js";
 import Doctor from "../models/Doctor.model.js";
 import jwt from "jsonwebtoken";
 import Admin from "../models/admin.model.js";
-import adminModel from "../models/admin.model.js";
 
 export const register = async (req, res) => {
   try {
@@ -153,7 +152,6 @@ export const register = async (req, res) => {
       profile,
     });
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       message: "Unable to create your account",
       success: false,
