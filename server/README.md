@@ -1,59 +1,66 @@
-# Doctor Marketplace Server
+# MediLink Server
 
-This is the backend server for the Doctor Marketplace application. It provides a RESTful API for user management, doctor verification, and appointment booking, as well as a standalone Socket.IO server to handle WebRTC signaling for real-time video consultations.
+The backend API and signaling server for the MediLink Doctor Consultation Platform. This Node.js application manages user authentication, appointment scheduling, doctor verification, payment processing via Stripe, and real-time WebRTC signaling for secure video consultations.
 
 ## 🚀 Features
 
-* **Authentication & Authorization**:
-    * JWT-based authentication.
-    * Role-based access control (Admin, Doctor, Patient).
-    * Secure password hashing with Bcrypt.
-* **Doctor Management**:
-    * Detailed profile creation (specialization, experience, fees).
-    * Availability scheduling.
-    * License document upload for verification.
-    * Admin approval workflow (Pending -> Approved/Rejected).
-* **Patient Services**:
-    * Advanced doctor search and filtering (Specialization, Fee, Rating, Experience).
-    * Appointment booking with slot validation and conflict detection.
-* **Admin Dashboard**:
-    * View unverified doctors.
-    * Approve or reject doctor profiles.
-    * Block/Unblock users.
-* **Real-time Video Call (WebRTC)**:
-    * Dedicated Socket.IO server for signaling.
-    * Room joining and peer negotiation handling.
+### 🔐 Authentication & Security
+- **JWT Authentication**: Secure stateless authentication with role-based access control (Admin, Doctor, Patient).
+- **Secure Password Storage**: Bcrypt hashing for user credentials.
+- **Account Management**: Functionality to block/unblock users and manage access.
+
+### 👩‍⚕️ Doctor & Patient Management
+- **Doctor Onboarding**: sophisticated registration flow accepting medical details and **PDF License Uploads** (via Multer).
+- **Verification Workflow**: Admin APIs to review, approve, or reject doctor applications.
+- **Advanced Search**: Filter doctors by specialization, fee range, experience, and rating.
+- **Availability**: Logic to handle specific day/time slots and prevent double-booking.
+
+### 💳 Payments (Stripe)
+- **Checkout Sessions**: Generate Stripe Checkout links for completed appointments.
+- **Webhooks**: Securely handle `checkout.session.completed` events to update appointment payment status in the database.
+- **Direct Transfers**: Configuration to route funds to connected doctor Stripe accounts (scalable architecture).
+
+### 📹 Real-Time Communication
+- **Integrated Signaling**: Socket.IO server runs alongside Express to handle WebRTC handshakes (`offer`, `answer`, `ice-candidates`).
+- **Secure Rooms**: Server-side validation ensures only the specific doctor and patient linked to an appointment can join the video room.
+- **Chat**: Persistent chat events within the consultation room.
 
 ## 🛠️ Tech Stack
 
-* **Runtime**: Node.js
-* **Framework**: Express.js
-* **Database**: MongoDB (Mongoose ODM)
-* **Real-time**: Socket.IO (Signaling for WebRTC)
-* **Authentication**: JSON Web Tokens (JWT)
-* **File Uploads**: Multer
-* **Security**: Helmet, CORS, Rate Limiting (in production)
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB (Mongoose ODM)
+- **Real-time**: Socket.IO
+- **Payments**: Stripe API
+- **File Handling**: Multer (Local storage for licenses)
+- **Security**: Helmet, CORS, JWT
 
 ## 📂 Project Structure
 
 ```bash
-├── index.js                  # Entry point for Socket.IO (Video Call Signaling)
-├── src/
-│   ├── app.js                # Express App configuration
-│   ├── server.js             # Entry point for REST API Server
-│   ├── config/
-│   │   └── db.js             # MongoDB connection logic
-│   ├── controllers/          # Request handlers (Auth, Admin, Doctor, Patient)
-│   ├── middlewares/          # Auth checks, File uploads (Multer)
-│   ├── models/               # Mongoose Schemas
-│   └── routes/               # API Route definitions
-└── uploads/                  # Directory for uploaded documents
+src/
+├── config/
+│   ├── db.js             # MongoDB connection
+│   └── stripe.js         # Stripe SDK configuration
+├── controllers/          # Business logic
+│   ├── admin.controller.js
+│   ├── auth.controller.js
+│   ├── doctor.controller.js
+│   ├── patient.controller.js
+│   └── stripe.controller.js
+├── middlewares/
+│   ├── auth.middleware.js   # JWT verification & Role checks
+│   └── multer.middleware.js # File upload config
+├── models/               # Mongoose Schemas (User, Doctor, Appointment, etc.)
+├── routes/               # API Route definitions
+├── app.js                # Express App & Socket.IO setup
+└── server.js             # Entry point
 
 ```
 
 ## ⚙️ Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+Create a `.env` file in the root directory with the following configuration:
 
 ```env
 # Server Configuration
@@ -61,14 +68,20 @@ PORT=5000
 NODE_ENV=development
 
 # Database
-MONGO_URI=mongodb://localhost:27017/doctor-marketplace
+MONGO_URI=mongodb://localhost:27017/medilink
 
 # Authentication
-JWT_SECRET=your_super_secret_key
-JWT_EXPIRES_IN=7d
+JWT_SECRET=your_super_secret_jwt_key
+JWT_EXPIRES_IN=30d
 
-# Client Configuration (Check for X) (CORS)
-CLIENT_URL=http://192.168.1.X:5173
+# Frontend & CORS
+CLIENT_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
+
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
 ```
 
 ## 📥 Installation & Setup
@@ -76,8 +89,7 @@ CLIENT_URL=http://192.168.1.X:5173
 1. **Clone the repository**
 ```bash
 git clone https://github.com/aks-1904/doctor-marketplace.git
-cd doctor-marketplace/server
-
+cd doctor-marketplace
 ```
 
 
@@ -88,72 +100,80 @@ npm install
 
 
 3. **Create Upload Directory**
-Ensure the uploads directory exists for license files:
+Ensure the local directory exists for storing uploaded licenses:
 ```bash
 mkdir -p uploads/licenses
 ```
 
 
-4. **Run the Servers**
+4. **Run the Server**
 ```bash
-npm run start
-```
-
-*To run development server*
-```bash
+# Development (using nodemon)
 npm run dev
+
+# Production
+npm start
+
 ```
 
 
 
 ## 📡 API Endpoints
 
-### Authentication (`/api/v1/auth`)
+### 🔐 Auth (`/api/v1/auth`)
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| POST | `/register` | Register new user (Patient/Doctor). Expects `multipart/form-data` for doctors (license upload). |
-| POST | `/login` | Login user. |
-| GET | `/logout` | Logout user. |
+| POST | `/register` | Register User (Multipart form-data for Doctors). |
+| POST | `/login` | Authenticate and receive JWT. |
+| GET | `/logout` | Clear cookie/token. |
 
-### Patient (`/api/v1/patient`)
+### 👤 Patient (`/api/v1/patient`)
 
-*Requires Role: Patient*
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| GET | `/` | Get list of approved doctors. Supports query params: `specialization`, `minFee`, `maxFee`, `rating`, `search`. |
-| POST | `/book` | Book an appointment. |
+| --- | --- | --- |
+| GET | `/` | Browse verified doctors with filters. |
+| POST | `/book` | Book a new appointment. |
+| GET | `/appointments` | Get patient's appointment history. |
 
-### Doctor (`/api/v1/doctor`)
+### 👨‍⚕️ Doctor (`/api/v1/doctor`)
 
-*Requires Role: Doctor*
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
+| --- | --- | --- |
+| GET | `/appointments` | Get doctor's schedule. |
 | PUT | `/` | Update appointment status (confirm/complete/cancel). |
 
-### Admin (`/api/v1/admin`)
+### 🛡️ Admin (`/api/v1/admin`)
 
-*Requires Role: Admin*
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| GET | `/get-unverified-doctors` | List doctors pending verification. |
-| POST | `/update-verification-status` | Approve or Reject doctor verification. |
-| POST | `/block` | Block a user access. |
-| POST | `/unblock` | Unblock a user. |
+| --- | --- | --- |
+| GET | `/get-unverified-doctors` | View pending applications. |
+| POST | `/update-verification-status` | Approve or Reject doctor licenses. |
+| POST | `/block` / `/unblock` | Manage user access. |
 
-## 📹 Socket.IO Events (WebRTC)
+### 💳 Payments (`/api/v1/payments`)
 
-The Socket server runs on `SOCKET_PORT` (default: 8000).
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| POST | `/create-checkout-session` | Initialize Stripe payment for an appointment. |
+| POST | `/webhook` | Stripe listener for payment confirmation. |
 
-**Connection Events:**
+## 🔌 Socket.IO & WebRTC Logic
 
-* `room:join`: Client requests to join a room.
-* `user:joined`: Server notifies room that a user joined.
+The Socket server is integrated directly into the HTTP server (`src/app.js`).
 
-**Call Signaling:**
+**Room Security (`room:join` event):**
+When a user attempts to join a room, the server:
 
-* `user:call`: Initiator sends an offer.
-* `incoming:call`: Receiver gets the offer.
-* `call:accepted`: Receiver sends answer back to initiator.
-* `peer:nego:needed`: Renegotiation needed.
-* `peer:ice`: Exchange ICE candidates.
+1. Looks up the `Appointment` by `roomId`.
+2. Verifies the appointment status is not "cancelled".
+3. **Authorization**: Checks if the connecting `socket.id` (via user ID) belongs to either the **Doctor** or **Patient** associated with that specific appointment.
+
+**Signaling Events:**
+
+* `user:call` / `incoming:call`: Initial SDP Offer.
+* `call:accepted`: SDP Answer.
+* `peer:nego:needed` / `peer:nego:final`: Renegotiation for stream updates.
+* `peer:ice`: ICE Candidate exchange.
+* `media:toggle`: Syncs camera/mic status between peers.
+* `chat:message`: Real-time text chat in the room.
